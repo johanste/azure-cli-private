@@ -1,4 +1,4 @@
-﻿from .._argparse import IncorrectUsageError
+﻿from .._argparse import IncorrectUsageError, ArgDecl
 from .._logging import logger
 
 # TODO: Alternatively, simply scan the directory for all modules
@@ -28,10 +28,11 @@ def description(description_text):
         return handler
     return add_description
 
-def option(spec, description_text=None, required=False, target=None):
+def option(spec, description_text=None, **kwargs):
     def add_option(handler):
+        aliases = [for alias in spec.split()
         _COMMANDS.setdefault(handler, {}).setdefault('args', []) \
-            .append((spec, description_text, required, target))
+            .append(ArgDecl(name, description=description_text, **kwargs)
         logger.debug('Added option "%s" to %s', spec, handler)
         return handler
     return add_option

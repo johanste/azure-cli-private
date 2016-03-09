@@ -58,6 +58,24 @@ def _index(string, char, default=sys.maxsize):
     except ValueError:
         return default
 
+class ArgDecl(object):
+
+    def __init__(self, name, **kwargs):
+        self.name = name
+
+        self.type = kwargs.pop('type', str)
+        self.description = kwargs.pop('description', None)
+        self.required = kwargs.pop('required', False)
+        self.default_value = kwargs.pop('default', None)
+        self.aliases = kwargs.pop('aliases', [])
+        self.target = kwargs.pop('target', name)
+        self.display_name = kwargs.pop('display_name', name)
+        self.parser = kwargs.pop('parser', None)
+        self.complete_func = kwargs.pop('complete_func', None)
+
+    def parse(self, strval):
+        return self.parser(strval) if self.parser else strval
+
 class ArgumentParserResult(object):  #pylint: disable=too-few-public-methods
     def __init__(self, result, output_format=None):
         self.result = result
@@ -91,7 +109,7 @@ class ArgumentParser(object):
 
         `description` is a short piece of help text to display in usage info.
 
-        `args` is a list of (spec, description) tuples. Each spec is either the
+        `args` is a list of ArgDecl. Each spec is either the
         name of a positional argument, or an ``'--argument -a <variable>'``
         string listing one or more argument names and an optional variable name.
         When multiple names are specified, the first is always used as the

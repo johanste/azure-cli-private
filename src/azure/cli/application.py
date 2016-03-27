@@ -35,6 +35,7 @@ class Application(object):
     FILTER_RESULT = 'Application.FilterResults'
     GLOBAL_PARSER_CREATED = 'GlobalParser.Created'
     COMMAND_PARSER_CREATED = 'CommandParser.Created'
+    COMMAND_TABLE_LOADED = 'CommandTable.Loaded'
     COMMAND_PARSER_LOADED = 'CommandParser.Loaded'
     COMMAND_PARSER_PARSED = 'CommandParser.Parsed'
 
@@ -57,7 +58,10 @@ class Application(object):
         self.raise_event(self.COMMAND_PARSER_CREATED, self.parser)
 
     def load_commands(self):
-        self.parser.load_command_table(self.configuration.get_command_table())
+        command_table = self.configuration.get_command_table()
+        self.raise_event(self.COMMAND_TABLE_LOADED, command_table)
+        self.parser.load_command_table(command_table)
+
         self.raise_event(self.COMMAND_PARSER_LOADED, self.parser)
 
     def execute(self, argv):

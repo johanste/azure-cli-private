@@ -36,8 +36,9 @@ class AzCliCommandParser(argparse.ArgumentParser):
                                                   parents=self.parents, conflict_handler='resolve')
             for arg in metadata['arguments']:
                 names = arg.pop('name').split()
+                completer = arg.pop('completer', None)
                 command_parser.add_argument(*names,
-                                            **arg)
+                                            **arg).completer = completer
             command_parser.set_defaults(func=handler)
 
     def _get_subparser(self, path):

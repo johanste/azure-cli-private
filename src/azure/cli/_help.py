@@ -15,6 +15,9 @@ def register(application):
     application.register(application.WELCOME_REQUESTED, show_welcome)
 
 def show_short_help(argv):
+    config = application.Configuration(argv)
+    cmd_table = config.get_command_table()
+    cmd_table = _reduce_to_children(cmd_table, argv)
     print('descr list')
 
 def show_long_help(argv):
@@ -23,6 +26,9 @@ def show_long_help(argv):
     config = application.Configuration(argv)
     cmd_table = config.get_command_table()
     cmd_table = _reduce_to_descendants(cmd_table, argv)
+    if len(cmd_table) > 1:
+        cmd_table = _reduce_to_children(cmd_table, argv)
+
 
     delimiters = ' '.join(argv)
     help = CommandHelpFile(delimiters, cmd_table) \
@@ -93,7 +99,7 @@ def print_arguments(help_file):
     if len(help_file.parameters) == 0:
         _print_indent('none', indent)
     required_tag = L(' [Required]')
-    max_name_length = max(len(p.name) + 11 if p.required else 0 for p in help_file.parameters)
+    max_name_length = max(len(p.name) + (11 if p.required else 0) for p in help_file.parameters)
     for p in help_file.parameters:
         indent = 1
         required_text = required_tag if p.required else ''
@@ -134,8 +140,10 @@ def _print_header(help_file):
 
 def _print_groups(help_file):
     indent = 1
+    max_name_length = len(max(c.name for c in help_file.children))
     for c in help_file.children:
-        _print_indent('{0}{1}'.format(c.name,
+        _print_indent('{0}{1}{2}'.format(c.name,
+                                         _get_column_indent(c.name, max_name_length),
                                       ': ' + c.short_summary if c.short_summary else ''),
                       indent)
     _print_indent('')
@@ -167,7 +175,8 @@ class HelpFile(object): #pylint: disable=too-few-public-methods
         fn = cmd_table.keys()[0]
 
         self.short_summary = cmd_table[fn].get('description', '')
-        file_data = _load_help_file_from_string(fn.__doc__)
+        if not isinstance(fn, str):
+            file_data = _load_help_file_from_string(fn.__doc__)
         if file_data:
             self._load_from_data(file_data)
         else:

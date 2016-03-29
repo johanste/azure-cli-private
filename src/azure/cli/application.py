@@ -1,12 +1,14 @@
 from collections import defaultdict
 from datetime import datetime
 import sys
+import os
 import re
 import argparse
 import logging
 from enum import Enum
 from .parser import AzCliCommandParser
 import azure.cli.extensions
+import azure.cli._help
 
 class Configuration(object): # pylint: disable=too-few-public-methods
     """The configuration object tracks session specific data such
@@ -37,6 +39,9 @@ class Application(object):
     COMMAND_PARSER_CREATED = 'CommandParser.Created'
     COMMAND_PARSER_LOADED = 'CommandParser.Loaded'
     COMMAND_PARSER_PARSED = 'CommandParser.Parsed'
+    LONG_HELP_REQUESTED = 'Help.LongRequested'
+    SHORT_HELP_REQUESTED = 'Help.ShortRequested'
+    WELCOME_REQUESTED = 'Help.WelcomeRequested'
 
     def __init__(self, configuration=None):
         self._event_handlers = defaultdict(lambda: [])
@@ -46,6 +51,9 @@ class Application(object):
         self.register(self.GLOBAL_PARSER_CREATED, Application._register_builtin_arguments)
         self.register(self.COMMAND_PARSER_LOADED, Application._enable_autocomplete)
         self.register(self.COMMAND_PARSER_PARSED, self._handle_builtin_arguments)
+
+        #register help
+        azure.cli._help.register(self)
 
         # Let other extensions make their presence known
         azure.cli.extensions.register_extensions(self)
@@ -61,8 +69,25 @@ class Application(object):
         self.raise_event(self.COMMAND_PARSER_LOADED, self.parser)
 
     def execute(self, argv):
-        args = self.parser.parse_args(argv)
-        self.raise_event(self.COMMAND_PARSER_PARSED, args)
+        if '-h' in argv or '--help' in argv:
+            self.raise_event(self.LONG_HELP_REQUESTED, argv)
+            self.parser.exit()
+
+        if len(argv) == 0:
+            self.raise_event(self.WELCOME_REQUESTED, argv)
+            self.parser.exit()
+
+        old_out = sys.stderr
+        try:
+            with open(os.devnull, 'w') as nul:
+                sys.stderr = nul
+                args = self.parser.parse_args(argv)
+                self.raise_event(self.COMMAND_PARSER_PARSED, args)
+        except SystemExit:
+            self.raise_event(self.SHORT_HELP_REQUESTED, argv)
+            self.parser.exit()
+        finally:
+            sys.stderr = old_out
 
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.

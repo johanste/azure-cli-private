@@ -11,9 +11,32 @@ class AzCliCommandParser(argparse.ArgumentParser):
     Azure CLI utility.
     """
     def __init__(self, **kwargs):
+        kwargs['add_help'] = False
+        kwargs['formatter_class'] = argparse.RawDescriptionHelpFormatter
         super(AzCliCommandParser, self).__init__(**kwargs)
         self.subparsers = {}
         self.parents = kwargs.get('parents', [])
+
+    def format_help(self):
+        parser = self._get_subparser([''])
+
+        children = parser.choices
+
+        s = """
+usage: az [{0}]
+          [--output {{list,json}}] [--help] [--query JMESPATH]
+
+description: {1}
+
+arguments:
+  account               account management
+  --output/-o {{list,json}}
+  --help/-h             Show help for a group or command
+  --query JMESPATH      JMESPath query string. See http://jmespath.org/ for
+                        more information and examples.
+        """.format(' | '.join(children),
+                   self.description or 'the cool new command line tool for Azure')
+        return s
 
     def load_command_table(self, command_table):
         """Load a command table into our parser.
@@ -35,7 +58,9 @@ class AzCliCommandParser(argparse.ArgumentParser):
                                                   description=metadata.get('description'),
                                                   parents=self.parents, conflict_handler='resolve')
             for arg in metadata['arguments']:
-                names = arg.pop('name').split()
+                names = arg['name'].split()
+                arg = arg.copy()
+                arg.pop('name')
                 command_parser.add_argument(*names,
                                             **arg)
             command_parser.set_defaults(func=handler)

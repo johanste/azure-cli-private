@@ -18,7 +18,7 @@ def _load_help_file(delimiters):
                     this module.... kjsdflkj... klsfkj paragraph1
                     this module.... kjsdflkj... klsfkj paragraph2
                 parameters: 
-                    - name: --username/-u
+                    - name: --username -u
                       type: string
                       required: False
                       short-summary: one line partial sentence
@@ -33,7 +33,7 @@ def _load_help_file(delimiters):
                         paragraph(s)
                         paragraph(s)
                         This is a long paragraph with text that wraps down to the next line.  The text is broken up by the wrap method after 100 chars.
-                    - name: --tenant/-t
+                    - name: --tenant -t
                       type: string
                       short-summary: one line partial sentence
                       long-summary: paragraph(s)
@@ -48,7 +48,7 @@ def _load_help_file(delimiters):
                      this module.... kjsdflkj... klsfkj paragraph1
                      this module.... kjsdflkj... klsfkj paragraph2
                  parameters: 
-                     - name: --username/-u
+                     - name: --username -u
                        type: string
                        required: false
                        short-summary: one line partial sentence
@@ -56,7 +56,7 @@ def _load_help_file(delimiters):
                        populator-commands:
                            - az vm list
                            - default
-                     - name: --password/-p
+                     - name: --password -p
                        type: string
                        short-summary: one line partial sentence
                        long-summary: paragraph(s)
@@ -64,7 +64,7 @@ def _load_help_file(delimiters):
                        type: string
                        short-summary: one line partial sentence
                        long-summary: paragraph(s)
-                     - name: --tenant/-t
+                     - name: --tenant -t
                        type: string
                        short-summary: one line partial sentence
                        long-summary: paragraph(s)

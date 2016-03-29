@@ -7,7 +7,7 @@ from ._locale import L
 from ._help_files import _load_help_file
 import application
 
-__all__ = ['print_detailed_help', 'print_welcome_message', 'GroupHelpFile', 'CommandHelpFile']
+__all__ = ['show_short_help', 'show_long_help', 'show_welcome']
 
 def register(application):
     application.register(application.SHORT_HELP_REQUESTED, show_short_help)
@@ -15,10 +15,12 @@ def register(application):
     application.register(application.WELCOME_REQUESTED, show_welcome)
 
 def show_short_help(argv):
+    print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(argv[-1]))
     config = application.Configuration(argv)
     cmd_table = config.get_command_table()
-    cmd_table = _reduce_to_children(cmd_table, argv)
-    print('descr list')
+    cmd_table = _reduce_to_completions(cmd_table, argv)
+    helps = [HelpFile(cmd_table[f]['name']) for f in cmd_table]
+    print_description_list(helps)
 
 def show_long_help(argv):
     argv = argv[:-1]
@@ -29,12 +31,15 @@ def show_long_help(argv):
     if len(cmd_table) > 1:
         cmd_table = _reduce_to_children(cmd_table, argv)
 
-
     delimiters = ' '.join(argv)
     help = CommandHelpFile(delimiters, cmd_table) \
         if len(cmd_table) == 1 and cmd_table.values()[0]['name'] == delimiters \
         else GroupHelpFile(delimiters, cmd_table)
     help.load(cmd_table)
+
+    if len(argv) == 0:
+        print('\nSpecial intro help for az')
+        help.command = 'az'
 
     print_detailed_help(help)
 
@@ -80,7 +85,7 @@ def print_description_list(help_files, out=sys.stdout):
     _out = out
 
     indent = 1
-    max_name_length = max(len(f.name) for f in help_files)
+    max_name_length = max(len(f.name) for f in help_files) if len(help_files) > 0 else 0
     for help_file in help_files:
         _print_indent('{0}{1}{2}'.format(help_file.name,
                                          _get_column_indent(help_file.name, max_name_length),
@@ -140,7 +145,7 @@ def _print_header(help_file):
 
 def _print_groups(help_file):
     indent = 1
-    max_name_length = len(max(c.name for c in help_file.children))
+    max_name_length = max(len(c.name) for c in help_file.children)
     for c in help_file.children:
         _print_indent('{0}{1}{2}'.format(c.name,
                                          _get_column_indent(c.name, max_name_length),
@@ -305,10 +310,25 @@ def _reduce_to_children(cmd_table, argv):
     for f in d:
         delimiters = d[f]['name'].split()
         child_name = delimiters[num_args]
-        child_name_is_command = len(delimiters) == len(argv) + 1
-        children[child_name] = {'name': ' '.join(delimiters[:len(argv) + 1])}
+        child_name_is_command = len(delimiters) == num_args + 1
+        children[child_name] = {'name': ' '.join(delimiters[:num_args + 1])}
         if child_name_is_command:
             children[child_name]['description'] = d[f].get('description', '')
+
+    return children
+
+def _reduce_to_completions(cmd_table, argv):
+    # add fake keys to the dict so we can represent groups, which are not backed by objects
+    children = {}
+    num_args = len(argv) - 1
+    for f in cmd_table:
+        delimiters = cmd_table[f]['name'].split()
+        child_name = delimiters[num_args]
+        child_name_is_command = len(delimiters) == num_args + 1
+        if child_name.startswith(argv[-1]):
+            children[child_name] = {'name': ' '.join(delimiters[:num_args + 1])}
+            if child_name_is_command:
+                children[child_name]['description'] = cmd_table[f].get('description', '')
 
     return children
 

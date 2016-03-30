@@ -11,6 +11,7 @@ class AzCliCommandParser(argparse.ArgumentParser):
     Azure CLI utility.
     """
     def __init__(self, **kwargs):
+        kwargs['add_help'] = False
         super(AzCliCommandParser, self).__init__(**kwargs)
         self.subparsers = {}
         self.parents = kwargs.get('parents', [])
@@ -32,13 +33,14 @@ class AzCliCommandParser(argparse.ArgumentParser):
             # parsers we add to the "choices" section of the subparser.
             subparser.choices[command_name] = command_name
             command_parser = subparser.add_parser(command_name,
+                                                  add_help=False,
                                                   description=metadata.get('description'),
                                                   parents=self.parents, conflict_handler='resolve')
             for arg in metadata['arguments']:
                 names = arg.pop('name').split()
                 command_parser.add_argument(*names,
                                             **arg)
-            command_parser.set_defaults(func=handler)
+            command_parser.set_defaults(func=handler, metadata=metadata)
 
     def _get_subparser(self, path):
         """For each part of the path, walk down the tree of
@@ -56,7 +58,7 @@ class AzCliCommandParser(argparse.ArgumentParser):
                 # subcmd2 and so on), we know we can always back up one step and
                 # add a subparser if one doesn't exist
                 grandparent_subparser = self.subparsers[tuple(path[0:length - 1])]
-                new_parser = grandparent_subparser.add_parser(path[length - 1])
+                new_parser = grandparent_subparser.add_parser(path[length - 1], parents=self.parents, add_help=False)
 
                 # Due to http://bugs.python.org/issue9253, we have to give the subparser
                 # a destination and set it to required in order to get a meaningful error

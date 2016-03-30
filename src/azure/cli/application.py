@@ -125,6 +125,7 @@ class Application(object):
 
     @staticmethod
     def _register_builtin_arguments(parser):
+        parser.add_argument('-h', '--help', dest='_help', nargs=0, action=HelpAction, help=argparse.SUPPRESS)
         parser.add_argument('--subscription', dest='_subscription_id', help=argparse.SUPPRESS)
         parser.add_argument('--output', '-o', dest='_output_format', choices=['list', 'json'],
                             help=argparse.SUPPRESS)
@@ -132,3 +133,17 @@ class Application(object):
     def _handle_builtin_arguments(self, args):
         self.configuration.output_format = args._output_format #pylint: disable=protected-access
         del args._output_format
+
+class HelpAction(argparse.Action):
+
+    def __init__(self, **kwargs):
+        super(HelpAction, self).__init__(**kwargs)
+
+    def __call__(self, parser, namespace, values, option_string=None):
+        print('HELP')
+        print(parser)
+        print(namespace)
+        print(values)
+        exit(4711)
+
+    

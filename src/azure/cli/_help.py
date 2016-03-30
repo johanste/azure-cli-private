@@ -379,7 +379,7 @@ def _reduce_to_completions(cmd_table, argv):
             continue
         name = delimiters[num_args]
         child_is_command = len(delimiters) == num_args + 1
-        if name.startswith(argv[-1]):
+        if _list_starts_with(argv, delimiters[:-1]) and name.startswith(argv[-1]):
             children[name] = {'name': ' '.join(delimiters[:num_args + 1])}
             if child_is_command:
                 children[name]['description'] = cmd_table[f].get('description', '')

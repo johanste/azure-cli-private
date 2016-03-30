@@ -72,11 +72,11 @@ class Application(object):
     def execute(self, argv):
         if '-h' in argv or '--help' in argv:
             self.raise_event(self.LONG_HELP_REQUESTED, argv)
-            self.parser.exit()
+            return None
 
         if len(argv) == 0:
             self.raise_event(self.WELCOME_REQUESTED, argv)
-            self.parser.exit()
+            return None
 
         old_out = sys.stderr
         buf = None
@@ -86,7 +86,7 @@ class Application(object):
             self.raise_event(self.COMMAND_PARSER_PARSED, args)
         except SystemExit:
             self.raise_event(self.SHORT_HELP_REQUESTED, argv)
-            self.parser.exit()
+            return None
         finally:
             sys.stderr = old_out
             buf.close()

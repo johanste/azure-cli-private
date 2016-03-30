@@ -1,12 +1,13 @@
 import unittest
 from six import StringIO
 
-from azure.cli._argparse import ArgumentParser, IncorrectUsageError
 from azure.cli._logging import logger
-from azure.cli.commands import command, description, option
+from azure.cli.parser import AzCliCommandParser
+from azure.cli.application import Application
 import azure.cli._help_files
 import logging
 import mock
+import sys
 import azure.cli._util as util
 from azure.cli._help import HelpAuthoringException
 
@@ -22,30 +23,54 @@ class Test_argparse(unittest.TestCase):
         logging.shutdown()
 
     def test_help_param(self):
-        p = ArgumentParser('test')
-        p.add_command(lambda a, b: (a, b),
-                      'n1',
-                      args=[('--arg -a', '', False, None),
-                            ('-b <v>', '', False, None)])
+        app = Application()
+        def test_handler(args):
+            pass
 
-        cmd_result = p.execute('n1 -h'.split())
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.parser.load_command_table(cmd_table)
 
-        cmd_result = p.execute('n1 --help'.split())
-        self.assertIsNone(cmd_result.result)
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
+
+        cmd_result = app.execute('n1 --help'.split())
+        self.assertIsNone(cmd_result)
 
     def test_help_plain_short_description(self):
-        p = ArgumentParser('test')
-        p.add_command(lambda a, b: (a, b),
-                      'n1',
-                      'the description',
-                      args=[('--arg -a', '', False, None), ('-b <v>', '', False, None)])
+        app = Application()
+        def test_handler(args):
+            pass
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'description': 'the description',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.parser.load_command_table(cmd_table)
+
+        old_out = sys.stdout
+        sys.stdout = io = StringIO()
+
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
+        print('VALUE: ' + io.getvalue())
         self.assertEqual(True, 'n1: the description' in io.getvalue())
+
         io.close()
+        sys.stdout = old_out
 
     def test_help_plain_long_description(self):
         p = ArgumentParser('test')

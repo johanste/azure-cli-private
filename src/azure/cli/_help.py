@@ -14,21 +14,20 @@ def register(application):
     application.register(application.LONG_HELP_REQUESTED, show_long_help)
     application.register(application.WELCOME_REQUESTED, show_welcome)
 
-def show_short_help(argv):
+def show_short_help(data):
+    argv, cmd_table = data
     nouns = _get_nouns(argv)
     args = _get_args(argv)
-    config = application.Configuration(nouns)
 
-    full_cmd_table = config.get_command_table()
-    child_table = _reduce_to_children(full_cmd_table, nouns)
-    completion_table = _reduce_to_completions(full_cmd_table, argv)
+    child_table = _reduce_to_children(cmd_table, nouns)
+    completion_table = _reduce_to_completions(cmd_table, argv)
 
-    if len(child_table) == 0 and _show_missing_and_extra_params(args, full_cmd_table, nouns):
+    if len(child_table) == 0 and _show_missing_and_extra_params(args, cmd_table, nouns):
         return
 
     helps = []
     if len(completion_table) == 1 and _get_only_metadata(completion_table)['name'] == ' '.join(argv):
-        print('\nSub-commands:\n')
+        print('\nSub-Commands:\n')
         helps = [HelpFile(child_table[f]['name']) for f in child_table]
     else:
         print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(nouns[-1]))
@@ -37,11 +36,10 @@ def show_short_help(argv):
     print_description_list(helps)
 
 
-def show_long_help(argv):
+def show_long_help(data):
+    argv, cmd_table = data
     nouns = _get_nouns(argv)
 
-    config = application.Configuration(nouns)
-    cmd_table = config.get_command_table()
     cmd_table = _reduce_to_descendants(cmd_table, nouns)
     if len(cmd_table) > 1:
         cmd_table = _reduce_to_children(cmd_table, nouns)
@@ -63,19 +61,15 @@ def show_long_help(argv):
 
     print_detailed_help(help)
 
-def show_welcome(argv):
+def show_welcome(data):
+    argv, cmd_table = data
+
     print_welcome_message()
 
-    config = application.Configuration()
-    cmd_table = config.get_command_table()
     help = GroupHelpFile('', cmd_table)
     print_description_list(help.children)
 
-_out = sys.stdout
-
-def print_welcome_message(out=sys.stdout):
-    global _out #pylint: disable=global-statement
-    _out = out
+def print_welcome_message():
     _print_indent(L(r"""
      /\                        
     /  \    _____   _ _ __ ___ 
@@ -85,9 +79,7 @@ def print_welcome_message(out=sys.stdout):
 """))
     _print_indent(L('\nWelcome to the cool new Azure CLI!\n\nHere are the base commands:\n'))
 
-def print_detailed_help(help_file, out=sys.stdout): #pylint: disable=unused-argument
-    global _out #pylint: disable=global-statement
-    _out = out
+def print_detailed_help(help_file):
     _print_header(help_file)
 
     _print_indent(L('Arguments') if help_file.type == 'command' else L('Sub-Commands'))
@@ -100,10 +92,7 @@ def print_detailed_help(help_file, out=sys.stdout): #pylint: disable=unused-argu
     if len(help_file.examples) > 0:
         _print_examples(help_file)
 
-def print_description_list(help_files, out=sys.stdout):
-    global _out #pylint: disable=global-statement
-    _out = out
-
+def print_description_list(help_files):
     indent = 1
     max_name_length = max(len(f.name) for f in help_files) if len(help_files) > 0 else 0
     for help_file in sorted(help_files, key=lambda h: h.name):
@@ -435,7 +424,7 @@ def _print_indent(s, indent=0, subsequent_spaces=-1):
                               width=100)
     paragraphs = s.split('\n')
     for p in paragraphs:
-        print(tw.fill(p), file=_out)
+        print(tw.fill(p))
 
 def _get_column_indent(text, max_name_length):
     return ' '*(max_name_length - len(text))

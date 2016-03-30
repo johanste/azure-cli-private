@@ -1,3 +1,4 @@
+from __future__ import print_function
 import unittest
 from six import StringIO
 
@@ -11,6 +12,17 @@ import sys
 import azure.cli._util as util
 from azure.cli._help import HelpAuthoringException
 
+io = {}
+def redirect_io(func):
+    def wrapper(self):
+        global io
+        old_out = sys.stdout
+        sys.stdout = io = StringIO()
+        func(self)
+        io.close()
+        sys.stdout = old_out
+    return wrapper
+
 class Test_argparse(unittest.TestCase):
     @classmethod
     def setUpClass(cls):
@@ -22,6 +34,7 @@ class Test_argparse(unittest.TestCase):
     def tearDownClass(cls):
         logging.shutdown()
 
+    @redirect_io
     def test_help_param(self):
         app = Application()
         def test_handler(args):
@@ -36,7 +49,7 @@ class Test_argparse(unittest.TestCase):
                     ]
                 }
             }
-        app.parser.load_command_table(cmd_table)
+        app.load_commands(cmd_table)
 
         cmd_result = app.execute('n1 -h'.split())
         self.assertIsNone(cmd_result)
@@ -44,6 +57,7 @@ class Test_argparse(unittest.TestCase):
         cmd_result = app.execute('n1 --help'.split())
         self.assertIsNone(cmd_result)
 
+    @redirect_io
     def test_help_plain_short_description(self):
         app = Application()
         def test_handler(args):
@@ -59,95 +73,117 @@ class Test_argparse(unittest.TestCase):
                     ]
                 }
             }
-        app.parser.load_command_table(cmd_table)
-
-        old_out = sys.stdout
-        sys.stdout = io = StringIO()
+        app.load_commands(cmd_table)
 
         cmd_result = app.execute('n1 -h'.split())
         self.assertIsNone(cmd_result)
-        print('VALUE: ' + io.getvalue())
         self.assertEqual(True, 'n1: the description' in io.getvalue())
 
-        io.close()
-        sys.stdout = old_out
-
+    @redirect_io
     def test_help_plain_long_description(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             long description
             '''
-        p.add_command(fn,
-                      'n1',
-                      args=[('--arg -a', '', False, None), ('-b <v>', '', False, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
-        self.assertEqual(True, io.getvalue().startswith('\nCommand\nn1\n    long description'))
-        io.close()
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
 
+        cmd_result = app.execute('n1 -h'.split())
+
+        self.assertIsNone(cmd_result)
+        self.assertEqual(True, io.getvalue().startswith('\nCommand\n    n1\n        long description'))
+
+    @redirect_io
     def test_help_long_description_and_short_description(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             long description
             '''
-        p.add_command(fn,
-                      'n1',
-                      'short description',
-                      args=[('--arg -a', '', False, None), ('-b <v>', '', False, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
-        self.assertEqual(True, io.getvalue().startswith('\nCommand\nn1: short description\n    long description'))
-        io.close()
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'description': 'short description',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
 
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
+        self.assertEqual(True, io.getvalue().startswith('\nCommand\n    n1: short description\n        long description'))
+
+    @redirect_io
     def test_help_docstring_description_overrides_short_description(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             short-summary: docstring summary
             '''
-        p.add_command(fn,
-                      'n1',
-                      'short description',
-                      args=[('--arg -a', '', False, None), ('-b <v>', '', False, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'description': 'short description',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
         self.assertEqual(True, 'n1: docstring summary' in io.getvalue())
-        io.close()
 
+    @redirect_io
     def test_help_long_description_multi_line(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             long-summary: |
                 line1
                 line2
             '''
-        p.add_command(fn,
-                      'n1',
-                      args=[('--arg -a', '', False, None), ('-b <v>', '', False, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
-        print('VALUE: ' + io.getvalue())
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
 
-        self.assertEqual(True, io.getvalue().startswith('\nCommand\nn1\n    line1\n    line2'))
-        io.close()
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
 
+        self.assertEqual(True, io.getvalue().startswith('\nCommand\n    n1\n        line1\n        line2'))
+
+    @redirect_io
     def test_help_params_documentations(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             parameters: 
-              - name: --foobar/-fb
+              - name: --foobar -fb
                 type: string
                 required: false
                 short-summary: one line partial sentence
@@ -155,50 +191,56 @@ class Test_argparse(unittest.TestCase):
                 populator-commands: 
                     - az vm list
                     - default
-              - name: --foobar2/-fb2
+              - name: --foobar2 -fb2
                 type: string
                 required: true
                 short-summary: one line partial sentence
                 long-summary: paragraph(s)
             '''
-        p.add_command(fn,
-                      'n1',
-                      args=[('--foobar -fb <v>', 'the foobar', False, None),
-                            ('--foobar2 -fb2 <v>', 'the foobar2', True, None),
-                            ('--foobar3 -fb3 <v>', 'the foobar3', False, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True},
+                    {'name': '--foobar3 -fb3', 'required': False, 'help': 'the foobar3'}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
         s = '''
 Command
-n1
+    n1
 
 Arguments
-    --foobar/-fb             : one line partial sentence
+    --foobar -fb             : one line partial sentence
         text, markdown, etc.
 
         Values from: az vm list, default
 
-    --foobar2/-fb2 [Required]: one line partial sentence
+    --foobar2 -fb2 [Required]: one line partial sentence
         paragraph(s)
 
-    --foobar3/-fb3           : the foobar3
+    --foobar3 -fb3           : the foobar3
 
 '''
         self.assertEqual(s, io.getvalue())
-        io.close()
 
+    @redirect_io
     def test_help_full_documentations(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             short-summary: this module does xyz one-line or so
             long-summary: |
                 this module.... kjsdflkj... klsfkj paragraph1
                 this module.... kjsdflkj... klsfkj paragraph2
             parameters: 
-              - name: --foobar/-fb
+              - name: --foobar -fb
                 type: string
                 required: false
                 short-summary: one line partial sentence
@@ -206,7 +248,7 @@ Arguments
                 populator-commands: 
                     - az vm list
                     - default
-              - name: --foobar2/-fb2
+              - name: --foobar2 -fb2
                 type: string
                 required: true
                 short-summary: one line partial sentence
@@ -215,27 +257,33 @@ Arguments
               - name: foo example
                 text: example details
             '''
-        p.add_command(fn,
-                      'n1',
-                      args=[('--foobar -fb <v>', 'the foobar', False, None),
-                            ('--foobar2 -fb2 <v>', 'the foobar2', True, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('n1 -h'.split())
+        self.assertIsNone(cmd_result)
         s = '''
 Command
-n1: this module does xyz one-line or so
-    this module.... kjsdflkj... klsfkj paragraph1
-    this module.... kjsdflkj... klsfkj paragraph2
+    n1: this module does xyz one-line or so
+        this module.... kjsdflkj... klsfkj paragraph1
+        this module.... kjsdflkj... klsfkj paragraph2
 
 Arguments
-    --foobar/-fb             : one line partial sentence
+    --foobar -fb             : one line partial sentence
         text, markdown, etc.
 
         Values from: az vm list, default
 
-    --foobar2/-fb2 [Required]: one line partial sentence
+    --foobar2 -fb2 [Required]: one line partial sentence
         paragraph(s)
 
 Examples
@@ -243,14 +291,14 @@ Examples
         example details
 '''
         self.assertEqual(s, io.getvalue())
-        io.close()
 
+    @redirect_io
     def test_help_mismatched_required_params(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             parameters: 
-              - name: --foobar/-fb
+              - name: --foobar -fb
                 type: string
                 required: false
                 short-summary: one line partial sentence
@@ -259,22 +307,28 @@ Examples
                     - az vm list
                     - default
             '''
-        p.add_command(fn,
-                      'n1',
-                      args=[('--foobar -fb <v>', 'the foobar', True, None)])
 
-        io = StringIO()
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': True}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
         self.assertRaisesRegexp(HelpAuthoringException,
-                               '.*mismatched required True vs\. False, --foobar/-fb.*',
-                                lambda: p.execute('n1 -h'.split(), out=io))
-        io.close()
+                               '.*mismatched required True vs\. False, --foobar -fb.*',
+                                lambda: app.execute('n1 -h'.split()))
 
+    @redirect_io
     def test_help_extra_help_params(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             '''
             parameters: 
-              - name: --foobar/-fb
+              - name: --foobar -fb
                 type: string
                 required: false
                 short-summary: one line partial sentence
@@ -283,76 +337,126 @@ Examples
                     - az vm list
                     - default
             '''
-        p.add_command(fn,
-                      'n1',
-                      args=[('--foobar2 -fb2 <v>', 'the foobar', True, None)])
 
-        io = StringIO()
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
         self.assertRaisesRegexp(HelpAuthoringException,
-                               '.*Extra help param --foobar/-fb.*',
-                                lambda: p.execute('n1 -h'.split(), out=io))
-        io.close()
+                               '.*Extra help param --foobar -fb.*',
+                                lambda: app.execute('n1 -h'.split()))
 
+    @redirect_io
     def test_help_with_param_specified(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
+        app = Application()
+        def test_handler(args):
             pass
-        p.add_command(fn,
-                      'n1',
-                      args=[('--arg -a', '', False, None), ('-b <v>', '', False, None)])
 
-        io = StringIO()
-        cmd_result = p.execute('n1 --arg -h'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--arg -a', 'required': False},
+                    {'name': '-b', 'required': False}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('n1 --arg -h'.split())
+        self.assertIsNone(cmd_result)
 
         s = '''
 Command
-n1
+    n1
 
 Arguments
-    --arg/-a
+    --arg -a
 
     -b
 
 '''
 
         self.assertEqual(s, io.getvalue())
-        io.close()
 
+    @redirect_io
     def test_help_group_children(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
-            pass            
-        p.add_command(fn,
-                      'group1 group2 n1',
-                      args=[('--foobar -fb <v>', 'the foobar', False, None),
-                            ('--foobar2 -fb2 <v>', 'the foobar2', True, None)])
-        p.add_command(fn,
-                      'group1 group3 n1',
-                      args=[('--foobar -fb <v>', 'the foobar', False, None),
-                            ('--foobar2 -fb2 <v>', 'the foobar2', True, None)])
+        app = Application()
+        def test_handler(args):
+            pass
 
-        io = StringIO()
-        cmd_result = p.execute('group1'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
-        s = 'Group\n    group1\n\nSub-Commands\n    group2\n    group3\n'
+        cmd_table = {
+            test_handler: {
+                'name': 'group1 group2 n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                },
+            test_handler: {
+                'name': 'group1 group3 n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('group1'.split())
+        self.assertIsNone(cmd_result)
+        s = '\nSub-Commands:\n\n    group3\n'
         self.assertEqual(s, io.getvalue())
-        io.close()
 
+    @redirect_io
     def test_help_group_help(self):
-        p = ArgumentParser('test')
-        def fn(a, b):
-            pass            
-        p.add_command(fn, 'test_group1 test_group2 n1')
+        app = Application()
+        def test_handler(args):
+            '''
+            short-summary: this module does xyz one-line or so
+            long-summary: |
+                this module.... kjsdflkj... klsfkj paragraph1
+                this module.... kjsdflkj... klsfkj paragraph2
+            parameters: 
+              - name: --foobar -fb
+                type: string
+                required: false
+                short-summary: one line partial sentence
+                long-summary: text, markdown, etc.
+                populator-commands: 
+                    - az vm list
+                    - default
+              - name: --foobar2 -fb2
+                type: string
+                required: true
+                short-summary: one line partial sentence
+                long-summary: paragraph(s)
+            examples:
+              - name: foo example
+                text: example details
+            '''
 
-        io = StringIO()
-        cmd_result = p.execute('test_group1 test_group2 --help'.split(), out=io)
-        self.assertIsNone(cmd_result.result)
+        cmd_table = {
+            test_handler: {
+                'name': 'test_group1 test_group2 n1',
+                'arguments': {}
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('test_group1 test_group2 --help'.split())
+        self.assertIsNone(cmd_result)
         s = '''
 Group
-test_group1 test_group2: this module does xyz one-line or so
-    this module.... kjsdflkj... klsfkj paragraph1
-    this module.... kjsdflkj... klsfkj paragraph2
+    test_group1 test_group2: this module does xyz one-line or so
+        this module.... kjsdflkj... klsfkj paragraph1
+        this module.... kjsdflkj... klsfkj paragraph2
 
 Sub-Commands
     n1
@@ -362,7 +466,6 @@ Examples
         example details
 '''
         self.assertEqual(s, io.getvalue())
-        io.close()
 
 
 if __name__ == '__main__':

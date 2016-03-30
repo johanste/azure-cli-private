@@ -15,29 +15,49 @@ def register(application):
     application.register(application.WELCOME_REQUESTED, show_welcome)
 
 def show_short_help(argv):
-    print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(argv[-1]))
-    config = application.Configuration(argv)
-    cmd_table = config.get_command_table()
-    cmd_table = _reduce_to_completions(cmd_table, argv)
-    helps = [HelpFile(cmd_table[f]['name']) for f in cmd_table]
+    nouns = _get_nouns(argv)
+    args = _get_args(argv)
+    config = application.Configuration(nouns)
+
+    full_cmd_table = config.get_command_table()
+    child_table = _reduce_to_children(full_cmd_table, nouns)
+    completion_table = _reduce_to_completions(full_cmd_table, argv)
+
+    if len(child_table) == 0 and _show_missing_and_extra_params(args, full_cmd_table, nouns):
+        return
+
+    helps = []
+    if len(completion_table) == 1 and _get_only_metadata(completion_table)['name'] == ' '.join(argv):
+        print('\nSub-commands:\n')
+        helps = [HelpFile(child_table[f]['name']) for f in child_table]
+    else:
+        print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(nouns[-1]))
+        helps = [HelpFile(completion_table[f]['name']) for f in completion_table]
+
     print_description_list(helps)
 
+
 def show_long_help(argv):
-    argv = argv[:-1]
+    nouns = _get_nouns(argv)
 
-    config = application.Configuration(argv)
+    config = application.Configuration(nouns)
     cmd_table = config.get_command_table()
-    cmd_table = _reduce_to_descendants(cmd_table, argv)
+    cmd_table = _reduce_to_descendants(cmd_table, nouns)
     if len(cmd_table) > 1:
-        cmd_table = _reduce_to_children(cmd_table, argv)
+        cmd_table = _reduce_to_children(cmd_table, nouns)
 
-    delimiters = ' '.join(argv)
+    delimiters = ' '.join(nouns)
     help = CommandHelpFile(delimiters, cmd_table) \
         if len(cmd_table) == 1 and cmd_table.values()[0]['name'] == delimiters \
         else GroupHelpFile(delimiters, cmd_table)
-    help.load(cmd_table)
 
-    if len(argv) == 0:
+    if len(cmd_table) == 0:
+        show_short_help(argv)
+        return
+    else:
+        help.load(cmd_table)
+
+    if len(nouns) == 0:
         print('\nSpecial intro help for az')
         help.command = 'az'
 
@@ -48,7 +68,7 @@ def show_welcome(argv):
 
     config = application.Configuration()
     cmd_table = config.get_command_table()
-    help = GroupHelpFile(' '.join(argv), cmd_table)
+    help = GroupHelpFile('', cmd_table)
     print_description_list(help.children)
 
 _out = sys.stdout
@@ -86,7 +106,7 @@ def print_description_list(help_files, out=sys.stdout):
 
     indent = 1
     max_name_length = max(len(f.name) for f in help_files) if len(help_files) > 0 else 0
-    for help_file in help_files:
+    for help_file in sorted(help_files, key=lambda h: h.name):
         _print_indent('{0}{1}{2}'.format(help_file.name,
                                          _get_column_indent(help_file.name, max_name_length),
                                          ': ' + help_file.short_summary \
@@ -146,7 +166,7 @@ def _print_header(help_file):
 def _print_groups(help_file):
     indent = 1
     max_name_length = max(len(c.name) for c in help_file.children)
-    for c in help_file.children:
+    for c in sorted(help_file.children, key=lambda h: h.name):
         _print_indent('{0}{1}{2}'.format(c.name,
                                          _get_column_indent(c.name, max_name_length),
                                       ': ' + c.short_summary if c.short_summary else ''),
@@ -163,6 +183,36 @@ def _print_examples(help_file):
 
         indent = 2
         _print_indent('{0}'.format(e.text), indent)
+
+def _get_nouns(argv):
+    nouns = []
+    for arg in argv:
+        if not arg.startswith('-'):
+            nouns.append(arg)
+        else:
+            break
+    return nouns
+
+def _get_args(argv):
+    args = []
+    arg_name = None
+
+    for arg in argv:
+        if arg.startswith('-'):
+            if arg_name:
+                args.append((arg_name, None))
+                arg_name = None
+            arg_name = arg
+        elif not arg_name:
+            continue
+        else:
+            args.append((arg_name, arg))
+            arg_name = None
+
+    if arg_name:
+        args.append((arg_name, None))
+
+    return args
 
 
 class HelpFile(object): #pylint: disable=too-few-public-methods
@@ -235,7 +285,7 @@ class CommandHelpFile(HelpFile): #pylint: disable=too-few-public-methods
         self.parameters = []
 
         for arg in metadata['arguments']:
-            self.parameters.append(HelpParameter(arg['name'], arg['help'], required=False))
+            self.parameters.append(HelpParameter(arg['name'], arg.get('help'), required=arg.get('required')))
 
     def _load_from_data(self, data):
         super(CommandHelpFile, self)._load_from_data(data)
@@ -309,6 +359,8 @@ def _reduce_to_children(cmd_table, argv):
     num_args = len(argv)
     for f in d:
         delimiters = d[f]['name'].split()
+        if num_args >= len(delimiters):
+            continue
         child_name = delimiters[num_args]
         child_name_is_command = len(delimiters) == num_args + 1
         children[child_name] = {'name': ' '.join(delimiters[:num_args + 1])}
@@ -323,14 +375,51 @@ def _reduce_to_completions(cmd_table, argv):
     num_args = len(argv) - 1
     for f in cmd_table:
         delimiters = cmd_table[f]['name'].split()
-        child_name = delimiters[num_args]
-        child_name_is_command = len(delimiters) == num_args + 1
-        if child_name.startswith(argv[-1]):
-            children[child_name] = {'name': ' '.join(delimiters[:num_args + 1])}
-            if child_name_is_command:
-                children[child_name]['description'] = cmd_table[f].get('description', '')
+        if num_args >= len(delimiters):
+            continue
+        name = delimiters[num_args]
+        child_is_command = len(delimiters) == num_args + 1
+        if name.startswith(argv[-1]):
+            children[name] = {'name': ' '.join(delimiters[:num_args + 1])}
+            if child_is_command:
+                children[name]['description'] = cmd_table[f].get('description', '')
+                children[name]['arguments'] = cmd_table[f].get('arguments', [])
 
     return children
+
+# return True if missing or extra params found
+def _show_missing_and_extra_params(args, full_cmd_table, nouns):
+    completion_table = _reduce_to_completions(full_cmd_table, nouns)
+    if len(completion_table) == 0:
+        return False
+
+    metadata = _get_only_metadata(completion_table)
+    if metadata['name'] == ' '.join(nouns):
+        all_params = set(a['name'].split()[0] for a in metadata['arguments'])
+        required_params = set(a['name'].split()[0] for a in metadata['arguments']
+                              if a.get('required'))
+    
+        supplied_params = set()
+        for a, _ in args:
+            found = False
+            for m in metadata['arguments']:
+                if a in m['name'].split():
+                    supplied_params.add(m['name'].split()[0])
+                    found = True
+            if not found:
+                supplied_params.add(a)
+    
+        extra = [p for p in supplied_params if p not in all_params]
+        if len(extra) > 0:
+            print('\nunrecognized parameters:\n    ' + '\n    '.join(extra))
+    
+        missing_required = required_params - supplied_params
+        if len(missing_required) > 0:
+            print('\nmissing required parameters:\n    ' + '\n    '.join(missing_required))
+        error = extra or missing_required
+        return error
+    return False
+
 
 def _list_starts_with(container_list, contained_list):
     if len(contained_list) > len(container_list):
@@ -356,6 +445,10 @@ def _load_help_file_from_string(text):
         return yaml.load(text) if text else None
     except Exception: #pylint: disable=broad-except
         return text
+
+def _get_only_metadata(cmd_table):
+    assert len(cmd_table) == 1
+    return cmd_table.values()[0]
 
 class HelpAuthoringException(Exception):
     pass

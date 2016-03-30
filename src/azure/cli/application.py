@@ -1,5 +1,6 @@
 from collections import defaultdict
 from datetime import datetime
+from six import StringIO
 import sys
 import os
 import re
@@ -78,16 +79,17 @@ class Application(object):
             self.parser.exit()
 
         old_out = sys.stderr
+        buf = None
         try:
-            with open(os.devnull, 'w') as nul:
-                sys.stderr = nul
-                args = self.parser.parse_args(argv)
-                self.raise_event(self.COMMAND_PARSER_PARSED, args)
+            sys.stderr = buf = StringIO()
+            args = self.parser.parse_args(argv)
+            self.raise_event(self.COMMAND_PARSER_PARSED, args)
         except SystemExit:
             self.raise_event(self.SHORT_HELP_REQUESTED, argv)
             self.parser.exit()
         finally:
             sys.stderr = old_out
+            buf.close()
 
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.

@@ -1,12 +1,11 @@
 from collections import defaultdict
 from datetime import datetime
-from six import StringIO
 import sys
-import os
 import re
 import argparse
 import logging
 from enum import Enum
+from six import StringIO
 from .parser import AzCliCommandParser
 import azure.cli.extensions
 import azure.cli._help
@@ -54,7 +53,7 @@ class Application(object):
         self.register(self.COMMAND_PARSER_PARSED, self._handle_builtin_arguments)
 
         #register help
-        azure.cli._help.register(self)
+        azure.cli._help.register(self) #pylint: disable=protected-access
 
         # Let other extensions make their presence known
         azure.cli.extensions.register_extensions(self)
@@ -64,6 +63,7 @@ class Application(object):
 
         self.parser = AzCliCommandParser(prog='az', parents=[self.global_parser])
         self.raise_event(self.COMMAND_PARSER_CREATED, self.parser)
+        self.command_table = {}
 
     def load_commands(self, cmd_table=None):
         self.command_table = cmd_table or self.configuration.get_command_table()

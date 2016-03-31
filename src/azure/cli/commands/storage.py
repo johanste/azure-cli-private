@@ -479,40 +479,40 @@ def create_block_blob(args):
         )
 
 
-#@option('--num-results <num>')
-#@option('--include <stuff>', L('specifies one or more additional datasets to include '\
-#    + 'in the response. Unsupported this release'))
-#@option('--delimiter <value>', L('Unsupported this release'))
-#@option('--marker <marker>', L('continuation token for enumerating additional results'))
-#@option('--timeout <seconds>')
-#def list_blobs(args, unexpected): #pylint: disable=unused-argument
-#@command_table.command('storage blob list')
-#@command_table.description(L('List all blobs in a container.'))
-#@command_table.option(**COMMON_PARAMETERS['container-name'])
-#@command_table.option(**COMMON_PARAMETERS['account-name'])
-#@command_table.option(**COMMON_PARAMETERS['account_key'])
-#@command_table.option(**COMMON_PARAMETERS['connection-string'])
-#@command_table.option('--prefix -p', help=L('blob name prefix to filter by'))
-#def list_blobs(args):
-#    bbs = _get_blob_service_client(args)
-#    blobs = bbs.list_blobs(
-#        container_name=args.get('container-name'),
-#        prefix=args.get('prefix'),
-#        num_results=_parse_int(args, 'num-results'),
-#        include=None,
-#        delimiter=None,
-#        marker=args.get('marker'),
-#        timeout=_parse_int(args, 'timeout'))
-#    return list(blobs.items)
+@option('--num-results <num>')
+@option('--include <stuff>', L('specifies one or more additional datasets to include '\
+    + 'in the response. Unsupported this release'))
+@option('--delimiter <value>', L('Unsupported this release'))
+@option('--marker <marker>', L('continuation token for enumerating additional results'))
+@option('--timeout <seconds>')
+def list_blobs(args, unexpected): #pylint: disable=unused-argument
+@command_table.command('storage blob list')
+@command_table.description(L('List all blobs in a container.'))
+@command_table.option(**COMMON_PARAMETERS['container-name'])
+@command_table.option(**COMMON_PARAMETERS['account-name'])
+@command_table.option(**COMMON_PARAMETERS['account_key'])
+@command_table.option(**COMMON_PARAMETERS['connection-string'])
+@command_table.option('--prefix -p', help=L('blob name prefix to filter by'))
+def list_blobs(args):
+    bbs = _get_blob_service_client(args)
+    blobs = bbs.list_blobs(
+        container_name=args.get('container-name'),
+        prefix=args.get('prefix'),
+        num_results=_parse_int(args, 'num-results'),
+        include=None,
+        delimiter=None,
+        marker=args.get('marker'),
+        timeout=_parse_int(args, 'timeout'))
+    return list(blobs.items)
 
-#def delete_blob(args, unexpected): #pylint: disable=unused-argument
-#@command_table.command('storage blob delete')
-#@command_table.description(L('Delete a blob from a container.'))
-#@command_table.option(**COMMON_PARAMETERS['container-name'])
-#@command_table.option(**COMMON_PARAMETERS['blob-name'])
-#def delete_blob(args):
-#    bbs = _get_blob_service_client(args)
-#    return bbs.delete_blob(args.get('container-name'), args.get('blob-name'))
+def delete_blob(args, unexpected): #pylint: disable=unused-argument
+@command_table.command('storage blob delete')
+@command_table.description(L('Delete a blob from a container.'))
+@command_table.option(**COMMON_PARAMETERS['container-name'])
+@command_table.option(**COMMON_PARAMETERS['blob-name'])
+def delete_blob(args):
+    bbs = _get_blob_service_client(args)
+    return bbs.delete_blob(args.get('container-name'), args.get('blob-name'))
 
 @command('storage blob exists')
 @description(L('Check if a blob exists.'))
@@ -689,29 +689,29 @@ def exist_file(args, unexpected): #pylint: disable=unused-argument
                           directory_name=args.get('directory-name'),
                           file_name=args.get('file-name')))
 
-#@command('storage file upload')
-#@option('--share-name -s <shareName>', L('the file share name'), required=True)
-#@option('--file-name -f <fileName>', L('the file name'), required=True)
-#@option('--local-file-name -lfn <path>', L('the path to the local file'), required=True)
-#@option('--directory-name -d <directoryName>', L('the directory name'))
-#@option('--account-name -n <accountName>', L('the storage account name'))
-#@option('--account-key -k <accountKey>', L('the storage account key'))
-#def storage_file_upload(args, unexpected): #pylint: disable=unused-argument
-#@command_table.command('storage file create')
-#@command_table.option('--share-name -sn', required=True)
-#@command_table.option('--file-name -fn', required=True)
-#@command_table.option('--local-file-name -lfn', required=True)
-#@command_table.option('--directory-name -dn')
-#@command_table.option(**COMMON_PARAMETERS['account-name'])
-#@command_table.option(**COMMON_PARAMETERS['account_key'])
-#@command_table.option(**COMMON_PARAMETERS['container-name'])
-#def storage_file_create(args):
-#    fsc = _get_file_service_client(args)
-#    fsc.create_file_from_path(args.get('share-name'),
-#                              args.get('directory-name'),
-#                              args.get('file-name'),
-#                              args.get('local-file-name'),
-#                              progress_callback=_update_progress)
+@command('storage file upload')
+@option('--share-name -s <shareName>', L('the file share name'), required=True)
+@option('--file-name -f <fileName>', L('the file name'), required=True)
+@option('--local-file-name -lfn <path>', L('the path to the local file'), required=True)
+@option('--directory-name -d <directoryName>', L('the directory name'))
+@option('--account-name -n <accountName>', L('the storage account name'))
+@option('--account-key -k <accountKey>', L('the storage account key'))
+def storage_file_upload(args, unexpected): #pylint: disable=unused-argument
+@command_table.command('storage file create')
+@command_table.option('--share-name -sn', required=True)
+@command_table.option('--file-name -fn', required=True)
+@command_table.option('--local-file-name -lfn', required=True)
+@command_table.option('--directory-name -dn')
+@command_table.option(**COMMON_PARAMETERS['account-name'])
+@command_table.option(**COMMON_PARAMETERS['account_key'])
+@command_table.option(**COMMON_PARAMETERS['container-name'])
+def storage_file_create(args):
+    fsc = _get_file_service_client(args)
+    fsc.create_file_from_path(args.get('share-name'),
+                              args.get('directory-name'),
+                              args.get('file-name'),
+                              args.get('local-file-name'),
+                              progress_callback=_update_progress)
 
 @command('storage file delete')
 @option('--share-name -s <shareName>', L('the file share name'), required=True)

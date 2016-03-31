@@ -5,7 +5,7 @@ import yaml
 from ._locale import L
 from ._help_files import _load_help_file
 
-__all__ = ['show_short_help', 'show_long_help', 'show_welcome']
+__all__ = ['register', 'show_short_help', 'show_long_help', 'show_welcome']
 
 def register(app):
     app.register(app.SHORT_HELP_REQUESTED, show_short_help)
@@ -25,7 +25,7 @@ def show_short_help(data):
 
     helps = []
     if len(completion_table) == 1 \
-        and _get_only_metadata(completion_table)['name'] == ' '.join(argv):
+        and _get_single_metadata(completion_table)['name'] == ' '.join(argv):
         print('\nSub-Commands:\n')
         helps = [HelpFile(child_table[f]['name']) for f in child_table]
     else:
@@ -34,24 +34,28 @@ def show_short_help(data):
 
     print_description_list(helps)
 
-
 def show_long_help(data):
     argv, cmd_table = data
     nouns = _get_nouns(argv)
 
-    cmd_table = _reduce_to_descendants(cmd_table, nouns)
-    if len(cmd_table) > 1:
+    cmd_table = _reduce_to_descendants_plus_self(cmd_table, nouns)
+
+    not_found = len(cmd_table) == 0
+    is_command = len(cmd_table) == 1
+    is_group = not is_command
+
+    if is_group:
         cmd_table = _reduce_to_children(cmd_table, nouns)
+    elif not_found:
+        show_short_help(argv)
+        return
 
     delimiters = ' '.join(nouns)
     help_file = CommandHelpFile(delimiters, cmd_table) \
-        if len(cmd_table) == 1 and _get_only_metadata(cmd_table)['name'] == delimiters \
+        if is_command and _get_single_metadata(cmd_table)['name'] == delimiters \
         else GroupHelpFile(delimiters, cmd_table)
 
-    if len(cmd_table) == 0:
-        show_short_help(argv)
-        return
-    else:
+    if is_command:
         help_file.load(cmd_table)
 
     if len(nouns) == 0:
@@ -183,11 +187,13 @@ def _get_nouns(argv):
 
 def _get_args(argv):
     args = []
+    # keep track of arg name so we can pair its value
     arg_name = None
 
     for arg in argv:
         if arg.startswith('-'):
             if arg_name:
+                # 2 '-' args in a row, so we have a flag
                 args.append((arg_name, None))
                 arg_name = None
             arg_name = arg
@@ -197,6 +203,7 @@ def _get_args(argv):
             args.append((arg_name, arg))
             arg_name = None
 
+    # if a flag is the last arg
     if arg_name:
         args.append((arg_name, None))
 
@@ -270,7 +277,7 @@ class CommandHelpFile(HelpFile): #pylint: disable=too-few-public-methods
         self.type = 'command'
 
         assert len(cmd_table) == 1
-        metadata = next(cmd_table[f] for f in cmd_table)
+        metadata = _get_single_metadata(cmd_table)
         self.parameters = []
 
         for arg in metadata['arguments']:
@@ -332,7 +339,7 @@ class HelpExample(object): #pylint: disable=too-few-public-methods
         self.text = _data['text']
 
 
-def _reduce_to_descendants(cmd_table, argv):
+def _reduce_to_descendants_plus_self(cmd_table, argv):
     d = {}
     exact_match_fn = next((f for f in cmd_table if cmd_table[f]['name'] == ' '.join(argv)), None)
     if exact_match_fn:
@@ -343,7 +350,7 @@ def _reduce_to_descendants(cmd_table, argv):
             if _list_starts_with(cmd_table[f]['name'].split(), argv)}
 
 def _reduce_to_children(cmd_table, argv):
-    d = _reduce_to_descendants(cmd_table, argv)
+    d = _reduce_to_descendants_plus_self(cmd_table, argv)
 
     # add fake keys to the dict so we can represent groups, which are not backed by objects
     children = {}
@@ -357,60 +364,54 @@ def _reduce_to_children(cmd_table, argv):
         children[child_name] = {'name': ' '.join(delimiters[:num_args + 1])}
         if child_name_is_command:
             children[child_name]['description'] = d[f].get('description', '')
+            children[child_name]['arguments'] = d[f].get('arguments', '')
 
     return children
 
 def _reduce_to_completions(cmd_table, argv):
     # add fake keys to the dict so we can represent groups, which are not backed by objects
-    children = {}
-    num_args = len(argv) - 1
-    for f in cmd_table:
-        delimiters = cmd_table[f]['name'].split()
-        if num_args >= len(delimiters):
-            continue
-        name = delimiters[num_args]
-        child_is_command = len(delimiters) == num_args + 1
-        if _list_starts_with(delimiters, argv[:-1]) and name.startswith(argv[-1]):
-            children[name] = {'name': ' '.join(delimiters[:num_args + 1])}
-            if child_is_command:
-                children[name]['description'] = cmd_table[f].get('description', '')
-                children[name]['arguments'] = cmd_table[f].get('arguments', [])
+    delimiters = ' '.join(argv)
+    children = _reduce_to_children(cmd_table, argv[:-1])
+    return {f: children[f] for f in children
+            if children[f]['name'].startswith(delimiters)}
 
-    return children
-
-# return True if missing or extra params found
 def _show_missing_and_extra_params(args, full_cmd_table, nouns):
+    # returns True if missing or extra params found
     completion_table = _reduce_to_completions(full_cmd_table, nouns)
-    if len(completion_table) == 0:
+    is_complete_command = len(completion_table) == 1
+    if not is_complete_command:
         return False
 
-    metadata = _get_only_metadata(completion_table)
-    if metadata['name'] == ' '.join(nouns):
-        all_params = set(a['name'].split()[0] for a in metadata['arguments'])
-        required_params = set(a['name'].split()[0] for a in metadata['arguments']
-                              if a.get('required'))
+    metadata = _get_single_metadata(completion_table)
+    is_matching_command = metadata['name'] == ' '.join(nouns)
+    if not is_matching_command:
+        return False
 
-        supplied_params = set()
-        for a, _ in args:
-            found = False
-            for m in metadata['arguments']:
-                if a in m['name'].split():
-                    supplied_params.add(m['name'].split()[0])
-                    found = True
-            if not found:
-                supplied_params.add(a)
+    all_params = set(_get_metadata_arg_long_name(a) for a in metadata['arguments'])
+    required_params = set(_get_metadata_arg_long_name(a) for a in metadata['arguments']
+                          if a.get('required'))
 
-        extra = [p for p in supplied_params if p not in all_params]
-        if len(extra) > 0:
-            print('\nunrecognized parameters:\n    ' + '\n    '.join(extra))
+    supplied_params = set()
+    for a, _ in args:
+        found = False
+        for m in metadata['arguments']:
+            if a in m['name'].split():
+                supplied_params.add(_get_metadata_arg_long_name(m))
+                found = True
+        if not found:
+            supplied_params.add(a)
 
-        missing_required = required_params - supplied_params
-        if len(missing_required) > 0:
-            print('\nmissing required parameters:\n    ' + '\n    '.join(missing_required))
-        error = extra or missing_required
-        return error
-    return False
+    extra = [p for p in supplied_params if p not in all_params]
+    if len(extra) > 0:
+        print('\nunrecognized parameters:\n    ' + '\n    '.join(extra))
 
+    missing_required = required_params - supplied_params
+    if len(missing_required) > 0:
+        print('\nmissing required parameters:\n    ' + '\n    '.join(missing_required))
+    return extra or missing_required
+
+def _get_metadata_arg_long_name(m):
+    return m['name'].split()[0]
 
 def _list_starts_with(container_list, contained_list):
     if len(contained_list) > len(container_list):
@@ -437,7 +438,7 @@ def _load_help_file_from_string(text):
     except Exception: #pylint: disable=broad-except
         return text
 
-def _get_only_metadata(cmd_table):
+def _get_single_metadata(cmd_table):
     assert len(cmd_table) == 1
     return next(metadata for _, metadata in cmd_table.items())
 

@@ -4,7 +4,7 @@ from six import StringIO
 
 from azure.cli._logging import logger
 from azure.cli.parser import AzCliCommandParser
-from azure.cli.application import Application
+from azure.cli.application import Application, Configuration
 import azure.cli._help_files
 import logging
 import mock
@@ -36,7 +36,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_param(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             pass
 
@@ -59,7 +59,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_plain_short_description(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             pass
 
@@ -81,7 +81,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_plain_long_description(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             long description
@@ -105,7 +105,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_long_description_and_short_description(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             long description
@@ -129,7 +129,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_docstring_description_overrides_short_description(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             short-summary: docstring summary
@@ -153,7 +153,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_long_description_multi_line(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             long-summary: |
@@ -179,7 +179,7 @@ class Test_argparse(unittest.TestCase):
 
     @redirect_io
     def test_help_params_documentations(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             parameters: 
@@ -232,7 +232,7 @@ Arguments
 
     @redirect_io
     def test_help_full_documentations(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             short-summary: this module does xyz one-line or so
@@ -294,7 +294,7 @@ Examples
 
     @redirect_io
     def test_help_mismatched_required_params(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             parameters: 
@@ -324,7 +324,7 @@ Examples
 
     @redirect_io
     def test_help_extra_help_params(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             parameters: 
@@ -354,7 +354,7 @@ Examples
 
     @redirect_io
     def test_help_with_param_specified(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             pass
 
@@ -387,7 +387,7 @@ Arguments
 
     @redirect_io
     def test_help_group_children(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             pass
         def test_handler2(args):
@@ -418,7 +418,7 @@ Arguments
 
     @redirect_io
     def test_help_group_completion(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             pass
         def test_handler2(args):
@@ -454,7 +454,7 @@ Command "gr" not found, commands starting with "gr":
 
     @redirect_io
     def test_help_extra_missing_params(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             pass
 
@@ -482,7 +482,7 @@ missing required parameters:
 
     @redirect_io
     def test_help_group_help(self):
-        app = Application()
+        app = Application(Configuration([]))
         def test_handler(args):
             '''
             short-summary: this module does xyz one-line or so

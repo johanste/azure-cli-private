@@ -1,4 +1,6 @@
+from __future__ import print_function
 import argparse
+import sys
 
 class IncorrectUsageError(Exception):
     '''Raised when a command is incorrectly used and the usage should be
@@ -16,6 +18,9 @@ class AzCliCommandParser(argparse.ArgumentParser):
         super(AzCliCommandParser, self).__init__(**kwargs)
         self.subparsers = {}
         self.parents = kwargs.get('parents', [])
+
+    def error(self, message):
+        print(message, file=sys.stderr)
 
     def load_command_table(self, command_table):
         """Load a command table into our parser.

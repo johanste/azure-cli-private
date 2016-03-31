@@ -1,5 +1,6 @@
 from __future__ import print_function
 import textwrap
+import sys
 import yaml
 
 from ._locale import L
@@ -13,26 +14,28 @@ def register(app):
     app.register(app.WELCOME_REQUESTED, show_welcome)
 
 def show_short_help(data):
-    argv, cmd_table = data
+    argv, cmd_table, err_text = data
     nouns = _get_nouns(argv)
     args = _get_args(argv)
 
-    child_table = _reduce_to_children(cmd_table, nouns)
-    completion_table = _reduce_to_completions(cmd_table, argv)
+    if 'argument COMMAND: invalid choice' in err_text \
+        or 'argument subcommand: invalid choice' in err_text \
+        or 'subcommand' in err_text:
+        completion_table = _reduce_to_completions(cmd_table, argv)
+        child_table = _reduce_to_children(cmd_table, nouns)
 
-    if len(child_table) == 0 and _show_missing_and_extra_params(args, cmd_table, nouns):
-        return
+        helps = []
+        if len(completion_table) == 1 \
+            and _list_starts_with(_get_single_metadata(completion_table)['name'].split(), argv):
+            print('\nSub-Commands:\n')
+            helps = [HelpFile(child_table[f]['name']) for f in child_table]
+        else:
+            print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(nouns[-1]))
+            helps = [HelpFile(completion_table[f]['name']) for f in completion_table]
 
-    helps = []
-    if len(completion_table) == 1 \
-        and _get_single_metadata(completion_table)['name'] == ' '.join(argv):
-        print('\nSub-Commands:\n')
-        helps = [HelpFile(child_table[f]['name']) for f in child_table]
+        print_description_list(helps)
     else:
-        print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(nouns[-1]))
-        helps = [HelpFile(completion_table[f]['name']) for f in completion_table]
-
-    print_description_list(helps)
+        print(err_text, file=sys.stderr)
 
 def show_long_help(data):
     argv, cmd_table = data
@@ -370,49 +373,14 @@ def _reduce_to_children(cmd_table, argv):
 
 def _reduce_to_completions(cmd_table, argv):
     # add fake keys to the dict so we can represent groups, which are not backed by objects
+    exact_match_fn = next((f for f in cmd_table if _list_starts_with(cmd_table[f]['name'].split(), argv)), None)
+    if exact_match_fn:
+        return {exact_match_fn: cmd_table[exact_match_fn]}
+
     delimiters = ' '.join(argv)
     children = _reduce_to_children(cmd_table, argv[:-1])
     return {f: children[f] for f in children
             if children[f]['name'].startswith(delimiters)}
-
-def _show_missing_and_extra_params(args, full_cmd_table, nouns):
-    completion_table = _reduce_to_completions(full_cmd_table, nouns)
-    is_complete_command = len(completion_table) == 1
-    if not is_complete_command:
-        return False
-
-    metadata = _get_single_metadata(completion_table)
-    is_matching_command = metadata['name'] == ' '.join(nouns)
-    if not is_matching_command:
-        return False
-
-    all_params = set(_get_metadata_arg_long_name(a) for a in metadata['arguments'])
-    required_params = set(_get_metadata_arg_long_name(a) for a in metadata['arguments']
-                          if a.get('required'))
-
-    supplied_params = set()
-    for a, _ in args:
-        found = False
-        for m in metadata['arguments']:
-            if a in m['name'].split():
-                supplied_params.add(_get_metadata_arg_long_name(m))
-                found = True
-        if not found:
-            supplied_params.add(a)
-
-    extra = [p for p in supplied_params if p not in all_params]
-    if len(extra) > 0:
-        print('\nunrecognized parameters:\n    ' + '\n    '.join(extra))
-
-    missing_required = required_params - supplied_params
-    if len(missing_required) > 0:
-        missing_required_fullnames = []
-        for arg in missing_required:
-            full_name = next(m['name'] for m in metadata['arguments']
-                             if _get_metadata_arg_long_name(m) == arg)
-            missing_required_fullnames.append(full_name)
-        print('\nmissing required parameters:\n    ' + '\n    '.join(missing_required_fullnames))
-    return extra or missing_required
 
 def _get_metadata_arg_long_name(m):
     return m['name'].split()[0]

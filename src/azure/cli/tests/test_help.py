@@ -16,11 +16,13 @@ io = {}
 def redirect_io(func):
     def wrapper(self):
         global io
-        old_out = sys.stdout
-        sys.stdout = io = StringIO()
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = sys.stderr = io = StringIO()
         func(self)
         io.close()
-        sys.stdout = old_out
+        sys.stdout = old_stdout
+        sys.stderr = old_stderr
     return wrapper
 
 class Test_argparse(unittest.TestCase):
@@ -469,16 +471,13 @@ Command "gr" not found, commands starting with "gr":
             }
         app.load_commands(cmd_table)
 
-        cmd_result = app.execute('n1 -fb a --foo bad'.split())
+        cmd_result = app.execute('n1 -fb a --foobar3 bad'.split())
         self.assertIsNone(cmd_result)
-        s = '''
-unrecognized parameters:
-    --foo
 
-missing required parameters:
-    --foobar2 -fb2
-'''
-        self.assertEqual(s, io.getvalue())
+        self.assertTrue('required' in io.getvalue()
+                        and '--foobar/-fb' not in io.getvalue()
+                        and '--foobar2/-fb' in io.getvalue()
+                        and 'unrecognized arguments: --foobar3' in io.getvalue())
 
     @redirect_io
     def test_help_group_help(self):

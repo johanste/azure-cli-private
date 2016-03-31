@@ -83,17 +83,32 @@ class Application(object):
             return None
 
         old_out = sys.stderr
-        buf = None
         try:
             sys.stderr = buf = StringIO()
             args = self.parser.parse_args(argv)
             self.raise_event(self.COMMAND_PARSER_PARSED, args)
-        except SystemExit:
-            self.raise_event(self.SHORT_HELP_REQUESTED, (argv, self.get_loaded_commands()))
-            return None
+        except Exception:
+            pass
         finally:
             sys.stderr = old_out
+            self.raise_event(self.SHORT_HELP_REQUESTED, (argv, self.get_loaded_commands(), buf.getvalue()))
+            #print('fake: ' + buf.getvalue())
             buf.close()
+            return None
+
+        #old_out = sys.stderr
+        #buf = None
+        #try:
+        #    sys.stderr = buf = StringIO()
+        #    args = self.parser.parse_args(argv)
+        #    self.raise_event(self.COMMAND_PARSER_PARSED, args)
+        #except SystemExit:
+        #    self.raise_event(self.SHORT_HELP_REQUESTED, (argv, self.get_loaded_commands()))
+        #    return None
+        #finally:
+        #    print(buf.getvalue())
+        #    sys.stderr = old_out
+        #    buf.close()
 
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.

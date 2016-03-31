@@ -406,7 +406,12 @@ def _show_missing_and_extra_params(args, full_cmd_table, nouns):
 
     missing_required = required_params - supplied_params
     if len(missing_required) > 0:
-        print('\nmissing required parameters:\n    ' + '\n    '.join(missing_required))
+        missing_required_fullnames = []
+        for arg in missing_required:
+            full_name = next(m['name'] for m in metadata['arguments']
+                             if _get_metadata_arg_long_name(m) == arg)
+            missing_required_fullnames.append(full_name)
+        print('\nmissing required parameters:\n    ' + '\n    '.join(missing_required_fullnames))
     return extra or missing_required
 
 def _get_metadata_arg_long_name(m):

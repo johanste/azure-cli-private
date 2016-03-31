@@ -476,7 +476,7 @@ unrecognized parameters:
     --foo
 
 missing required parameters:
-    --foobar2
+    --foobar2 -fb2
 '''
         self.assertEqual(s, io.getvalue())
 

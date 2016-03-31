@@ -390,17 +390,19 @@ Arguments
         app = Application()
         def test_handler(args):
             pass
+        def test_handler2(args):
+            pass
 
         cmd_table = {
             test_handler: {
-                'name': 'group1 group2 n1',
+                'name': 'group1 group3 n1',
                 'arguments': [
                     {'name': '--foobar -fb', 'required': False},
                     {'name': '--foobar2 -fb2', 'required': True}
                     ]
                 },
-            test_handler: {
-                'name': 'group1 group3 n1',
+            test_handler2: {
+                'name': 'group1 group2 n1',
                 'arguments': [
                     {'name': '--foobar -fb', 'required': False},
                     {'name': '--foobar2 -fb2', 'required': True}
@@ -411,7 +413,71 @@ Arguments
 
         cmd_result = app.execute('group1'.split())
         self.assertIsNone(cmd_result)
-        s = '\nSub-Commands:\n\n    group3\n'
+        s = '\nSub-Commands:\n\n    group2\n    group3\n'
+        self.assertEqual(s, io.getvalue())
+
+    @redirect_io
+    def test_help_group_completion(self):
+        app = Application()
+        def test_handler(args):
+            pass
+        def test_handler2(args):
+            pass
+
+        cmd_table = {
+            test_handler: {
+                'name': 'group1 group3 n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                },
+            test_handler2: {
+                'name': 'group1 group2 n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('group1 gr'.split())
+        self.assertIsNone(cmd_result)
+        s = '''
+Command "gr" not found, commands starting with "gr":
+
+    group2
+    group3
+'''
+        self.assertEqual(s, io.getvalue())
+
+    @redirect_io
+    def test_help_extra_missing_params(self):
+        app = Application()
+        def test_handler(args):
+            pass
+
+        cmd_table = {
+            test_handler: {
+                'name': 'n1',
+                'arguments': [
+                    {'name': '--foobar -fb', 'required': False},
+                    {'name': '--foobar2 -fb2', 'required': True}
+                    ]
+                }
+            }
+        app.load_commands(cmd_table)
+
+        cmd_result = app.execute('n1 -fb a --foo bad'.split())
+        self.assertIsNone(cmd_result)
+        s = '''
+unrecognized parameters:
+    --foo
+
+missing required parameters:
+    --foobar2
+'''
         self.assertEqual(s, io.getvalue())
 
     @redirect_io

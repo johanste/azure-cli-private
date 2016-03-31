@@ -376,7 +376,6 @@ def _reduce_to_completions(cmd_table, argv):
             if children[f]['name'].startswith(delimiters)}
 
 def _show_missing_and_extra_params(args, full_cmd_table, nouns):
-    # returns True if missing or extra params found
     completion_table = _reduce_to_completions(full_cmd_table, nouns)
     is_complete_command = len(completion_table) == 1
     if not is_complete_command:

@@ -16,7 +16,6 @@ def register(app):
 def show_short_help(data):
     argv, cmd_table, err_text = data
     nouns = _get_nouns(argv)
-    args = _get_args(argv)
 
     if 'argument COMMAND: invalid choice' in err_text \
         or 'argument subcommand: invalid choice' in err_text \
@@ -164,7 +163,7 @@ def _print_groups(help_file):
     for c in sorted(help_file.children, key=lambda h: h.name):
         _print_indent('{0}{1}{2}'.format(c.name,
                                          _get_column_indent(c.name, max_name_length),
-                                      ': ' + c.short_summary if c.short_summary else ''),
+                                         ': ' + c.short_summary if c.short_summary else ''),
                       indent)
     _print_indent('')
 
@@ -373,7 +372,8 @@ def _reduce_to_children(cmd_table, argv):
 
 def _reduce_to_completions(cmd_table, argv):
     # add fake keys to the dict so we can represent groups, which are not backed by objects
-    exact_match_fn = next((f for f in cmd_table if _list_starts_with(cmd_table[f]['name'].split(), argv)), None)
+    exact_match_fn = next((f for f in cmd_table
+                           if _list_starts_with(cmd_table[f]['name'].split(), argv)), None)
     if exact_match_fn:
         return {exact_match_fn: cmd_table[exact_match_fn]}
 

@@ -88,11 +88,17 @@ class Application(object):
             sys.stderr = buf = StringIO()
             args = self.parser.parse_args(argv)
             self.raise_event(self.COMMAND_PARSER_PARSED, args)
+        except (SystemExit, TypeError):
+            return None
         finally:
             sys.stderr = old_out
-            self.raise_event(self.SHORT_HELP_REQUESTED, (argv, self.get_loaded_commands(), buf.getvalue()))
+            err_text = buf.getvalue()
+            self.raise_event(self.SHORT_HELP_REQUESTED, (argv,
+                                                         self.get_loaded_commands(),
+                                                         err_text))
             buf.close()
-            return None
+            if err_text:
+                return None
 
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.

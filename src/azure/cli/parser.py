@@ -1,4 +1,6 @@
+from __future__ import print_function
 import argparse
+import sys
 
 class IncorrectUsageError(Exception):
     '''Raised when a command is incorrectly used and the usage should be
@@ -11,9 +13,14 @@ class AzCliCommandParser(argparse.ArgumentParser):
     Azure CLI utility.
     """
     def __init__(self, **kwargs):
+        kwargs['add_help'] = False
+        kwargs['formatter_class'] = argparse.RawDescriptionHelpFormatter
         super(AzCliCommandParser, self).__init__(**kwargs)
         self.subparsers = {}
         self.parents = kwargs.get('parents', [])
+
+    def error(self, message):
+        print(message, file=sys.stderr)
 
     def load_command_table(self, command_table):
         """Load a command table into our parser.
@@ -35,7 +42,9 @@ class AzCliCommandParser(argparse.ArgumentParser):
                                                   description=metadata.get('description'),
                                                   parents=self.parents, conflict_handler='resolve')
             for arg in metadata['arguments']:
-                names = arg.pop('name').split()
+                names = arg['name'].split()
+                arg = arg.copy()
+                arg.pop('name')
                 command_parser.add_argument(*names,
                                             **arg)
             command_parser.set_defaults(func=handler)

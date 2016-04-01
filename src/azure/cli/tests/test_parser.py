@@ -45,6 +45,7 @@ class TestParser(unittest.TestCase):
         args = parser.parse_args('sub-command the-second-name'.split())
         self.assertIs(args.func, test_handler2)
 
+        # TODO: BUG: this fails on 2.7 because argparse throws a different error message in 2.7 than in 3.5
         AzCliCommandParser.error = VerifyError(self, "the following arguments are required: subcommand")
         parser.parse_args('sub-command'.split())
         self.assertTrue(AzCliCommandParser.error.called)
@@ -67,6 +68,7 @@ class TestParser(unittest.TestCase):
         args = parser.parse_args('test command --req yep'.split())
         self.assertIs(args.func, test_handler)
 
+        # TODO: BUG: this fails on 2.7 because argparse throws a different error message in 2.7 than in 3.5
         AzCliCommandParser.error = VerifyError(self, "the following arguments are required: --req")
         parser.parse_args('test command'.split())
         self.assertTrue(AzCliCommandParser.error.called)

@@ -4,9 +4,6 @@ from .._locale import L
 
 command_table = CommandTable()
 
-def get_command_table(): # pylint:disable=duplicate-code
-    return command_table
-
 @command_table.command('taskhelp deploy-arm-template',
                        description=L('How to deploy and ARM template using Azure CLI.'))
 def deploy_template_help(args): #pylint: disable=unused-argument

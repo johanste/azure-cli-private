@@ -15,21 +15,22 @@ def register(app):
 
 def show_short_help(data):
     argv, cmd_table, err_text = data
-    nouns = _get_nouns(argv)
 
     if 'argument COMMAND: invalid choice' in err_text \
         or 'argument subcommand: invalid choice' in err_text \
         or 'subcommand' in err_text:
+
+        nouns = _get_nouns(argv, cmd_table)
         completion_table = _reduce_to_completions(cmd_table, argv)
-        child_table = _reduce_to_children(cmd_table, nouns)
 
         helps = []
         if len(completion_table) == 1 \
             and _list_starts_with(_get_single_metadata(completion_table)['name'].split(), argv):
             print('\nSub-Commands:\n')
+            child_table = _reduce_to_children(cmd_table, nouns)
             helps = [HelpFile(child_table[f]['name']) for f in child_table]
         else:
-            print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(nouns[-1]))
+            print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(argv[len(nouns)]))
             helps = [HelpFile(completion_table[f]['name']) for f in completion_table]
 
         print_description_list(helps)
@@ -38,7 +39,7 @@ def show_short_help(data):
 
 def show_long_help(data):
     argv, cmd_table = data
-    nouns = _get_nouns(argv)
+    nouns = _get_nouns(argv, cmd_table)
 
     cmd_table = _reduce_to_descendants_plus_self(cmd_table, nouns)
 
@@ -49,7 +50,7 @@ def show_long_help(data):
     if is_group:
         cmd_table = _reduce_to_children(cmd_table, nouns)
     elif not_found:
-        show_short_help(argv)
+        show_short_help((argv, cmd_table, ''))
         return
 
     delimiters = ' '.join(nouns)
@@ -159,7 +160,9 @@ def _print_header(help_file):
 
 def _print_groups(help_file):
     indent = 1
-    max_name_length = max(len(c.name) for c in help_file.children)
+    max_name_length = max(len(c.name) for c in help_file.children) \
+        if len(help_file.children) > 0 \
+        else 0
     for c in sorted(help_file.children, key=lambda h: h.name):
         _print_indent('{0}{1}{2}'.format(c.name,
                                          _get_column_indent(c.name, max_name_length),
@@ -178,13 +181,20 @@ def _print_examples(help_file):
         indent = 2
         _print_indent('{0}'.format(e.text), indent)
 
-def _get_nouns(argv):
+def _get_nouns(argv, cmd_table):
     nouns = []
     for arg in argv:
         if not arg.startswith('-'):
             nouns.append(arg)
         else:
             break
+    
+    existing_noun_lists = [nl['name'] for nl in cmd_table.values()]
+    while len(nouns) > 0:
+        for name in existing_noun_lists:
+            if _list_starts_with(name.split(), nouns):
+                return nouns
+        nouns.pop()
     return nouns
 
 def _get_args(argv):

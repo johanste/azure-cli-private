@@ -30,7 +30,8 @@ def show_short_help(data):
             child_table = _reduce_to_children(cmd_table, nouns)
             helps = [HelpFile(child_table[f]['name']) for f in child_table]
         else:
-            print('\nCommand "{0}" not found, commands starting with "{0}":\n'.format(argv[len(nouns)]))
+            print('\nCommand "{0}" not found, commands starting with "{0}":\n'
+                  .format(argv[len(nouns)]))
             helps = [HelpFile(completion_table[f]['name']) for f in completion_table]
 
         print_description_list(helps)
@@ -188,7 +189,7 @@ def _get_nouns(argv, cmd_table):
             nouns.append(arg)
         else:
             break
-    
+
     existing_noun_lists = [nl['name'] for nl in cmd_table.values()]
     while len(nouns) > 0:
         for name in existing_noun_lists:

@@ -70,16 +70,13 @@ class Application(object):
         self.parser.load_command_table(self.command_table)
         self.raise_event(self.COMMAND_PARSER_LOADED, self.parser)
 
-    def get_loaded_commands(self):
-        return self.command_table
-
     def execute(self, argv):
         if '-h' in argv or '--help' in argv:
-            self.raise_event(self.LONG_HELP_REQUESTED, (argv, self.get_loaded_commands()))
+            self.raise_event(self.LONG_HELP_REQUESTED, (argv, self.command_table))
             return None
 
         if len(argv) == 0:
-            self.raise_event(self.WELCOME_REQUESTED, (argv, self.get_loaded_commands()))
+            self.raise_event(self.WELCOME_REQUESTED, (argv, self.command_table))
             return None
 
         old_out = sys.stderr
@@ -94,11 +91,11 @@ class Application(object):
             sys.stderr = old_out
             err_text = buf.getvalue()
             self.raise_event(self.SHORT_HELP_REQUESTED, (argv,
-                                                         self.get_loaded_commands(),
+                                                         self.command_table,
                                                          err_text))
             buf.close()
-            if err_text:
-                return None
+        if err_text:
+            return None
 
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.

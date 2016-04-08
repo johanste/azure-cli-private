@@ -32,19 +32,21 @@ def main(args, file=sys.stdout): #pylint: disable=redefined-builtin
                                 'locale',
                                 CONFIG.get('locale', 'en-US')))
 
-    config = Configuration(args)
-    app = Application(config)
-    app.load_commands()
     try:
+        config = Configuration(args)
+        app = Application(config)
+        app.load_commands()
         cmd_result = app.execute(args)
         # Commands can return a dictionary/list of results
         # If they do, we print the results.
         if cmd_result:
             formatter = OutputProducer.get_formatter(app.configuration.output_format)
             OutputProducer(formatter=formatter, file=file).out(cmd_result)
+    except KeyboardInterrupt:
+        return 130 # 128 + SIGINT
     except RuntimeError as ex:
         logger.error(ex.args[0])
         return ex.args[1] if len(ex.args) >= 2 else -1
-    except KeyboardInterrupt:
-        return -1
-
+    except Exception as ex:
+        logger.error(ex)
+        return 1 # General error

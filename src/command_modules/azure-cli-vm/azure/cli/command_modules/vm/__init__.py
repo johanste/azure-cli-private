@@ -11,7 +11,7 @@ from azure.mgmt.compute.operations import (AvailabilitySetsOperations,
 
 from azure.cli.commands._command_creation import get_mgmt_service_client
 from azure.cli.commands._auto_command import build_operation, AutoCommandDefinition
-from azure.cli.commands import CommandTable, LongRunningOperation
+from azure.cli.commands import CommandTable, LongRunningOperation, COMMON_PARAMETERS
 from azure.cli._locale import L
 
 def _compute_client_factory(_):
@@ -129,3 +129,28 @@ build_operation("vm scalesetvm",
                     AutoCommandDefinition(VirtualMachineScaleSetVMsOperations.start, LongRunningOperation(L('Starting VM scale set VMs'), L('VM scale set VMs started'))),
                 ],
                 command_table)
+
+def get_kwargs(args, *names):
+    return {name: args.get(name) for name in names}
+
+from azure.mgmt.compute.models.compute_management_client_enums import DiskCreateOptionTypes, CachingTypes
+from azure.mgmt.compute.models import DataDisk, VirtualHardDisk
+
+@command_table.command('vm disk attach')
+@command_table.option(**COMMON_PARAMETERS['resource_group_name'])
+@command_table.option('--vmname -n', dest='vm_name', help='Name of Virtual Machine', required=True)
+@command_table.option('--lun', dest='lun', required=True)
+@command_table.option('--diskname', dest='name', help='Disk name', required=True)
+@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, required=True)
+@command_table.option('--vhd', required=True, type=VirtualHardDisk)
+@command_table.option('--create-option', default=DiskCreateOptionTypes.empty, type=DiskCreateOptionTypes, choices=DiskCreateOptionTypes)
+@command_table.option('--image')
+def _vm_disk_attach(args):
+    client = _compute_client_factory(args)
+    existing_vm = client.virtual_machines.get(args.get('resource-group-name'), args.get('vm-name'))
+    existing_vm.resources = None
+    disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=args.get('create-option'), disk_size_gb = args.get('disksize'))
+    existing_vm.storage_profile.data_disks.append(disk)
+    poller = client.virtual_machines.create_or_update(resource_group_name = args.get('resource-group-name'), vm_name = args.get('vm-name'), parameters = existing_vm)
+    op = LongRunningOperation('Adding disk', 'Disk added')
+    return op(poller)

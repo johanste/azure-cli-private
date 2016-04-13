@@ -130,27 +130,66 @@ build_operation("vm scalesetvm",
                 ],
                 command_table)
 
-def get_kwargs(args, *names):
-    return {name: args.get(name) for name in names}
+# Patch/update operations for Virtual Machines
 
 from azure.mgmt.compute.models.compute_management_client_enums import DiskCreateOptionTypes, CachingTypes
 from azure.mgmt.compute.models import DataDisk, VirtualHardDisk
 
-@command_table.command('vm disk attach')
-@command_table.option(**COMMON_PARAMETERS['resource_group_name'])
-@command_table.option('--vmname -n', dest='vm_name', help='Name of Virtual Machine', required=True)
-@command_table.option('--lun', dest='lun', required=True)
+def vm_getter(args):
+    client = _compute_client_factory(args)
+    result = client.virtual_machines.get(args.get('resourcegroup'), args.get('vm_name'))
+    return result
+
+def vm_setter(args, instance, start_msg, end_msg):
+    instance .resources = None # Issue: https://github.com/Azure/autorest/issues/934
+    client = _compute_client_factory(args)
+    poller = client.virtual_machines.create_or_update(resource_group_name = args.get('resourcegroup'), 
+                                                      vm_name = args.get('vm_name'), 
+                                                      parameters = instance)
+    return LongRunningOperation(start_msg, end_msg)(poller)
+
+def patches_vm(start_msg, finish_msg):
+    '''Decorator indicating that the decorated function modifies an existing Virtual Machine
+    in Azure.
+    It automatically adds arguments required to identify the Virtual Machine to be patched and
+    handles the actual put call to the compute service, leaving the decorated function to only
+    have to worry about the modifications it has to do.
+    '''
+    def wrapped(func):
+        def invoke(args):
+            instance = vm_getter(args)
+            func(args, instance)
+            vm_setter(args, instance, start_msg, finish_msg)
+
+        command_table[invoke]['arguments'].append(COMMON_PARAMETERS['resource_group_name'])
+        command_table[invoke]['arguments'].append({
+            'name': '--vm-name -n',
+            'dest': 'vm_name',
+            'help': 'Name of Virtual Machine to update',
+            'required': True
+            })
+        return invoke
+    return wrapped
+
+@command_table.command('vm disk attach-new')
+@command_table.option('--lun', dest='lun', type=int, required=True)
 @command_table.option('--diskname', dest='name', help='Disk name', required=True)
 @command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, required=True)
 @command_table.option('--vhd', required=True, type=VirtualHardDisk)
 @command_table.option('--create-option', default=DiskCreateOptionTypes.empty, type=DiskCreateOptionTypes, choices=DiskCreateOptionTypes)
-@command_table.option('--image')
-def _vm_disk_attach(args):
-    client = _compute_client_factory(args)
-    existing_vm = client.virtual_machines.get(args.get('resource-group-name'), args.get('vm-name'))
-    existing_vm.resources = None
-    disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=args.get('create-option'), disk_size_gb = args.get('disksize'))
-    existing_vm.storage_profile.data_disks.append(disk)
-    poller = client.virtual_machines.create_or_update(resource_group_name = args.get('resource-group-name'), vm_name = args.get('vm-name'), parameters = existing_vm)
-    op = LongRunningOperation('Adding disk', 'Disk added')
-    return op(poller)
+@patches_vm('Attaching disk', 'Disk attached')
+def _vm_disk_attach_new(args, instance):
+    disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=args.get('create_option'), disk_size_gb = args.get('disksize'))
+    instance.storage_profile.data_disks.append(disk)
+
+@command_table.command('vm disk detach')
+@command_table.option('--diskname', dest='name', help='Disk name', required=True)
+@patches_vm('Detaching disk', 'Disk detached')
+def _vm_disk_detach(args, instance):
+    instance.resources = None # Issue: https://github.com/Azure/autorest/issues/934
+    disk = next(iter(([d for d in instance.storage_profile.data_disks if d.name == args.get('name')])))
+    if disk:
+        instance.storage_profile.data_disks.remove(disk)
+    else:
+        raise RuntimeError("No disk with the name '%s' found" % args.get('name'))
+

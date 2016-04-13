@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+location="westus"
+publisher="$1"
+offer="$2"
+
+az vm image list-skus --location ${location} --publisher_name ${publisher} --offer ${offer}

@@ -1,0 +1,1 @@
+az vm list-all --query "[].{name:name, rg:resourceGroup}" --out tsv | xargs -L 1 -n 2 bash -c 'az vm get --vm-name $0 -g $1 --expand instanceView --query "{resourceGroup:resourceGroup, name: name, state: instanceView.statuses}" --output list'

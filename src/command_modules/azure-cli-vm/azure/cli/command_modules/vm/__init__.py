@@ -171,15 +171,24 @@ def patches_vm(start_msg, finish_msg):
         return invoke
     return wrapped
 
-@command_table.command('vm disk attach-new')
+@command_table.command('vm disk attach-new', help=L('Attach a new disk to an existing Virtual Machine'))
 @command_table.option('--lun', dest='lun', type=int, required=True)
 @command_table.option('--diskname', dest='name', help='Disk name', required=True)
-@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, required=True)
+@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, default=1023)
 @command_table.option('--vhd', required=True, type=VirtualHardDisk)
-@command_table.option('--create-option', default=DiskCreateOptionTypes.empty, type=DiskCreateOptionTypes, choices=DiskCreateOptionTypes)
 @patches_vm('Attaching disk', 'Disk attached')
 def _vm_disk_attach_new(args, instance):
-    disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=args.get('create_option'), disk_size_gb = args.get('disksize'))
+    disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=DiskCreateOptionTypes.empty, disk_size_gb = args.get('disksize'))
+    instance.storage_profile.data_disks.append(disk)
+
+@command_table.command('vm disk attach-existing', help=L('Attach an existing disk to an existing Virtual Machine'))
+@command_table.option('--lun', dest='lun', type=int, required=True)
+@command_table.option('--diskname', dest='name', help='Disk name', required=True)
+@command_table.option('--vhd', required=True, type=VirtualHardDisk)
+@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, default=1023)
+@patches_vm('Attaching disk', 'Disk attached')
+def _vm_disk_attach_new(args, instance):
+    disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=DiskCreateOptionTypes.attach, disk_size_gb = args.get('disksize'))
     instance.storage_profile.data_disks.append(disk)
 
 @command_table.command('vm disk detach')

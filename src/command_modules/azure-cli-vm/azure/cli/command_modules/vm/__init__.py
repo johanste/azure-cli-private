@@ -135,7 +135,21 @@ build_operation("vm scalesetvm",
 from azure.mgmt.compute.models.compute_management_client_enums import DiskCreateOptionTypes, CachingTypes
 from azure.mgmt.compute.models import DataDisk, VirtualHardDisk
 
+def min_max(min, max, type=int):
+    def validate(strvalue):
+        value = type(strvalue)
+        if value < min or value > max:
+            raise ValueError(message='Value must be between %s and %s' % (str(min), str(max)))
+        return value
+
+    # As argparse uses the name of the type parameter in error messages, we make sure that 
+    # our validation parser presents itself with a better name than 'validator'
+    setattr(validate, '__name__', 'range (%s - %s)' % (str(min), str(max)))
+    return validate
+
 def vm_getter(args):
+    '''Retreive a VM based on the `args` passed in.
+    '''
     client = _compute_client_factory(args)
     result = client.virtual_machines.get(args.get('resourcegroup'), args.get('vm_name'))
     return result
@@ -174,7 +188,7 @@ def patches_vm(start_msg, finish_msg):
 @command_table.command('vm disk attach-new', help=L('Attach a new disk to an existing Virtual Machine'))
 @command_table.option('--lun', dest='lun', type=int, required=True)
 @command_table.option('--diskname', dest='name', help='Disk name', required=True)
-@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, default=1023)
+@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=min_max(1, 1023), default=1023)
 @command_table.option('--vhd', required=True, type=VirtualHardDisk)
 @patches_vm('Attaching disk', 'Disk attached')
 def _vm_disk_attach_new(args, instance):
@@ -185,9 +199,9 @@ def _vm_disk_attach_new(args, instance):
 @command_table.option('--lun', dest='lun', type=int, required=True)
 @command_table.option('--diskname', dest='name', help='Disk name', required=True)
 @command_table.option('--vhd', required=True, type=VirtualHardDisk)
-@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=int, default=1023)
+@command_table.option('--disksize', dest='disksize', help='Size of disk (Gb)', type=min_max(1, 1023), default=1023)
 @patches_vm('Attaching disk', 'Disk attached')
-def _vm_disk_attach_new(args, instance):
+def _vm_disk_attach_existing(args, instance):
     disk = DataDisk(lun=args.get('lun'), vhd = args.get('vhd'), name=args.get('name'), create_option=DiskCreateOptionTypes.attach, disk_size_gb = args.get('disksize'))
     instance.storage_profile.data_disks.append(disk)
 
@@ -202,3 +216,69 @@ def _vm_disk_detach(args, instance):
     else:
         raise RuntimeError("No disk with the name '%s' found" % args.get('name'))
 
+
+#
+# Composite convenience commands for the CLI
+#
+def _parse_rg_name(strid):
+    '''From an ID, extract the (resource group, name) tuple
+    '''
+    import re
+    parts = re.split('/', strid)
+    if parts[3] != 'resourceGroups':
+        raise KeyError()
+
+    return (parts[4], parts[8])
+    return parsed
+
+@command_table.command('vm get-ip-addresses')
+@command_table.option('-g --resource_group_name', required=False)
+@command_table.option('-n --vm-name', required=False)
+def _vm_network_list(args):
+    from azure.mgmt.network import NetworkManagementClient, NetworkManagementClientConfiguration
+
+    # We start by getting NICs as they are the smack in the middle of all data that we
+    # want to collect for a VM (as long as we don't need any info on the VM than what 
+    # is available in the Id, we don't need to make any calls to the compute RP)
+    #
+    # Since there is no guarantee that a NIC is in the same resource group as a given
+    # Virtual Machine, we can't constrain the lookup to only a single group...
+    network_client = get_mgmt_service_client(NetworkManagementClient, NetworkManagementClientConfiguration)
+    nics = network_client.network_interfaces.list_all()
+    public_ip_addresses = network_client.public_ip_addresses.list_all()
+
+    public_ip_address_lookup = {pip.id: pip for pip in list(public_ip_addresses)}
+
+    result = []
+    for nic in [n for n in list(nics) if n.virtual_machine]:
+        resource_group, vm_name = None if nic.virtual_machine is None else _parse_rg_name(nic.virtual_machine.id)
+
+        # If provided, make sure that resource group name and vm name match the NIC we are looking at
+        # before adding it to the result...
+        if ((args.get('resource_group_name') is None or resource_group == args.get('resource_group_name'))
+            and (args.get('vm_name') is None or vm_name == args['vm_name'])):
+
+            network_info = {
+                'privateIpAddresses': [],
+                'publicIpAddresses': []
+            }
+            for ip_configuration in nic.ip_configurations:
+                network_info['privateIpAddresses'].append(ip_configuration.private_ip_address)
+                if ip_configuration.public_ip_address:
+                    public_ip_address = public_ip_address_lookup[ip_configuration.public_ip_address.id]
+                    network_info['publicIpAddresses'].append({
+                        'id': public_ip_address.id,
+                        'name': public_ip_address.name,
+                        'ipAddress': public_ip_address.ip_address,
+                        'ipAllocationMethod': public_ip_address.public_ip_allocation_method
+                        })
+
+            result.append({
+                'virtualMachine': {
+                    'resourceGroup': resource_group,
+                    'name': vm_name,
+                    'network': network_info
+                    }
+                })
+
+    return result

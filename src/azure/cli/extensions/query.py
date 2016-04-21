@@ -4,6 +4,7 @@ def _register_global_parameter(parser):
     # Let the program know that we are adding a parameter --query
     parser.add_argument('--query', dest='_jmespath_query', metavar='JMESPATH',
                         help='JMESPath query string. See http://jmespath.org/ for more information and examples.') # pylint: disable=line-too-long
+    parser.add_argument('--select-property', dest='_select', nargs='+')
 
 def register(application):
     def handle_query_parameter(args):
@@ -20,6 +21,21 @@ def register(application):
 
         except AttributeError:
             pass
+
+        try:
+            select_value = args._select #  pylint: disable=protected-access
+            del args._select
+
+            if select_value:
+                def select_output(event_data):
+                    from jmespath import search, Options
+                    query_string = '[].{%s}' % ', '.join(select_value)
+                    event_data['result'] = search(query_string, event_data['result'],
+                                                  Options(collections.OrderedDict))
+                application.register(application.FILTER_RESULT, select_output)
+        except AttributeError:
+            pass
+
 
     application.register(application.GLOBAL_PARSER_CREATED, _register_global_parameter)
     application.register(application.COMMAND_PARSER_PARSED, handle_query_parameter)

@@ -15,6 +15,7 @@ class AzCliCommandParser(argparse.ArgumentParser):
         self.subparsers = {}
         self.parents = kwargs.get('parents', [])
         self.help_file = kwargs.pop('help_file', None)
+        self.super_actions = {}
         super(AzCliCommandParser, self).__init__(**kwargs)
 
     def load_command_table(self, command_table):
@@ -39,8 +40,15 @@ class AzCliCommandParser(argparse.ArgumentParser):
                                                   help_file=metadata.get('help_file'))
             for arg in metadata['arguments']:
                 names = arg.get('name').split()
-                command_parser.add_argument(*names, **{k:v for k, v in arg.items() if k != 'name'})
+                command_parser.add_argument(*names, **{k:v for k, v in arg.items() if k != 'name' and not k.startswith('_')})
             command_parser.set_defaults(func=handler)
+
+    def add_argument(self, *args, **kwargs):
+        """
+        add_argument(dest, ..., name=value, ...)
+        add_argument(option_string, option_string, ..., name=value, ...)
+        """
+        self.super_actions[args] = super(AzCliCommandParser, self).add_argument(*args, **kwargs)
 
     def _get_subparser(self, path):
         """For each part of the path, walk down the tree of

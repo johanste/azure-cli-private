@@ -34,4 +34,8 @@ PARAMETER_ALIASES.update({
         'required': True,
         'type': VirtualHardDisk
     },
+    'vm_name': {
+        'name': '-n --name',
+        '_semantic_type': 'resource_name'
+        }
 })

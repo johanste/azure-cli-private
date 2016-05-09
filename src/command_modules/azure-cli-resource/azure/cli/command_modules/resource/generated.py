@@ -18,33 +18,32 @@ build_operation(
     [
         CommandDefinition(
             ResourceGroupsOperations.delete,
-            LongRunningOperation(L('Deleting resource group'), L('Resource group deleted'))),
-        CommandDefinition(ResourceGroupsOperations.get, 'ResourceGroup', 'show'),
-        CommandDefinition(ResourceGroupsOperations.check_existence, 'Bool', 'exists'),
+            LongRunningOperation(L('Deleting resource group'), L('Resource group deleted')),
+            id_parameters=['resource_group_name']),
+        AutoCommandDefinition(ResourceGroupsOperations.get, 'ResourceGroup', 'show',
+                              id_parameters=['resource_group_name']),
+        AutoCommandDefinition(ResourceGroupsOperations.check_existence, 'Bool', 'exists',
+                              id_parameters=['resource_group_name']),
     ],
-    command_table, patch_aliases(PARAMETER_ALIASES, {
-        'resource_group_name': {'name': '--name -n'}
-    }))
+    command_table, PARAMETER_ALIASES)
 
 build_operation(
     'resource group', None, ConvenienceResourceGroupCommands,
     [
-        CommandDefinition(ConvenienceResourceGroupCommands.list, '[ResourceGroup]'),
-        CommandDefinition(ConvenienceResourceGroupCommands.create, 'ResourceGroup'),
+        AutoCommandDefinition(ConvenienceResourceGroupCommands.list, '[ResourceGroup]'),
+        AutoCommandDefinition(ConvenienceResourceGroupCommands.create, 'ResourceGroup',
+                              id_parameters=['resource_group_name']),
     ],
-    command_table, patch_aliases(PARAMETER_ALIASES, {
-        'resource_group_name': {'name': '--name -n'}
-    }))
+    command_table, PARAMETER_ALIASES)
 
 build_operation(
     'resource', None, ConvenienceResourceCommands,
     [
-        CommandDefinition(ConvenienceResourceCommands.list, '[Resource]'),
-        CommandDefinition(ConvenienceResourceCommands.show, 'Resource'),
+        AutoCommandDefinition(ConvenienceResourceCommands.list, '[Resource]'),
+        AutoCommandDefinition(ConvenienceResourceCommands.show, 'Resource', 
+                              id_parameters=('resource_group_name', 'resource_name')),
     ],
-    command_table, patch_aliases(PARAMETER_ALIASES, {
-        'resource_name': {'name': '--name -n'}
-    }))
+    command_table, PARAMETER_ALIASES)
 
 build_operation(
     'tag', 'tags', _resource_client_factory,

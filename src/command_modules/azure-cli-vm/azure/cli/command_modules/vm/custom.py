@@ -81,7 +81,9 @@ class ConvenienceVmCommands(object): # pylint: disable=too-few-public-methods
         return all_images
 
 
-    def list_ip_addresses(self, resource_group_name=None, vm_name=None):
+    def list_ip_addresses(self,
+                          resource_group_name,
+                          vm_name=None):
         ''' Get IP addresses from one or more Virtual Machines
         :param str resource_group_name:Name of resource group.
         :param str vm_name:Name of virtual machine.
@@ -104,7 +106,6 @@ class ConvenienceVmCommands(object): # pylint: disable=too-few-public-methods
         result = []
         for nic in [n for n in list(nics) if n.virtual_machine]:
             nic_resource_group, nic_vm_name = _parse_rg_name(nic.virtual_machine.id)
-
             # If provided, make sure that resource group name and vm name match the NIC we are
             # looking at before adding it to the result...
             if (resource_group_name in (None, nic_resource_group)

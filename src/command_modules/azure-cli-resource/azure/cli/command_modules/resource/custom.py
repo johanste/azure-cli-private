@@ -103,12 +103,12 @@ class ConvenienceResourceCommands(object):
     def __init__(self, **_):
         pass
 
-    def show(self, resource_group, resource_name, resource_type, api_version=None, parent=None):
+    def show(self, resource_group_name, resource_type, resource_name, api_version=None, parent=None): # pylint: disable=too-many-arguments,no-self-use
         ''' Show details of a specific resource in a resource group or subscription
-        :param str resource_group:the containing resource group name
-        :param str resource_name:the resource name
-        :param str resource_type:the resource type in format: <provider-namespace>/<type>
-        :param str api_version:the API version of the resource provider
+        :param str resource_group_name:the containing resource group name
+        :param str resource-type:the resource type in format: <provider-namespace>/<type>
+        :param str name:the resource name
+        :param str api-version:the API version of the resource provider
         :param str parent:the name of the parent resource (if needed) in <type>/<name> format'''
         rcf = _resource_client_factory()
 
@@ -117,7 +117,7 @@ class ConvenienceResourceCommands(object):
         parent_path = '{}/{}'.format(parent.type, parent.name) if parent else ''
 
         results = rcf.resources.get(
-            resource_group_name=resource_group,
+            resource_group_name=resource_group_name,
             resource_name=resource_name,
             resource_provider_namespace=resource_type.namespace,
             resource_type=resource_type.type,

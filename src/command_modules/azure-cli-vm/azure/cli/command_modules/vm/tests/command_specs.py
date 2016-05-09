@@ -48,22 +48,21 @@ class VMListIPAddressesScenarioTest(CommandTestScript):
             self.tear_down)
 
     def set_up(self):
-        self.run('resource group create --location {} --name {}'.format(
+        self.run('resource group create --location {} {}'.format(
             self.location,
             self.resource_group))
 
     def test_body(self):
         # Expecting no results at the beginning
-        self.test('vm list-ip-addresses --resource-group {}'.format(self.resource_group), None)
-        self.run(['vm', 'create', '--resource-group', self.resource_group,
-                  '--location', self.location,
-                  '-n', self.vm_name, '--admin-username', 'ubuntu',
+        self.test('vm list-ip-addresses {}'.format(self.resource_group), None)
+        self.run(['vm', 'create', self.resource_group, self.vm_name,
+                  '-l', self.location, '--admin-username', 'ubuntu',
                   '--image', 'Canonical:UbuntuServer:14.04.4-LTS:latest',
                   '--admin-password', 'testPassword0', '--deployment-name', self.deployment_name,
                   '--public-ip-address-allocation', self.ip_allocation_method,
                   '--public-ip-address-type', 'new'])
         # Expecting the one we just added
-        self.test('vm list-ip-addresses --resource-group {}'.format(self.resource_group),
+        self.test('vm list-ip-addresses {}'.format(self.resource_group),
                   [
                       JMESPathComparator('length(@)', 1),
                       JMESPathComparator('[0].virtualMachine.name', self.vm_name),
@@ -80,7 +79,7 @@ class VMListIPAddressesScenarioTest(CommandTestScript):
                  )
 
     def tear_down(self):
-        self.run('resource group delete --name {}'.format(self.resource_group))
+        self.run('resource group delete {}'.format(self.resource_group))
 
 class VMSizeListScenarioTest(CommandTestScript):
 
@@ -103,17 +102,17 @@ class VMShowScenarioTest(CommandTestScript):
             self.tear_down)
 
     def set_up(self):
-        self.run('resource group create --location {} --name {}'.format(
+        self.run('resource group create --location {} {}'.format(
             self.location,
             self.resource_group))
 
     def test_body(self):
-        self.run(['vm', 'create', '--resource-group', self.resource_group,
+        self.run(['vm', 'create', self.resource_group, self.vm_name,
                   '--location', self.location,
-                  '-n', self.vm_name, '--admin-username', 'ubuntu',
+                  '--admin-username', 'ubuntu',
                   '--image', 'Canonical:UbuntuServer:14.04.4-LTS:latest',
                   '--admin-password', 'testPassword0', '--deployment-name', self.deployment_name])
-        self.test('vm show --resource-group {} --name {} --expand instanceView'.format(
+        self.test('vm show {} {} --expand instanceView'.format(
             self.resource_group, self.vm_name),
                   [
                       JMESPathComparator('type(@)', 'object'),
@@ -123,7 +122,7 @@ class VMShowScenarioTest(CommandTestScript):
                   ])
 
     def tear_down(self):
-        self.run('resource group delete --name {}'.format(self.resource_group))
+        self.run('resource group delete {}'.format(self.resource_group))
 
 class VMImageListOffersScenarioTest(CommandTestScript):
 
@@ -221,24 +220,24 @@ class VMListSizesScenarioTest(CommandTestScript):
         super(VMListSizesScenarioTest, self).__init__(self.set_up, self.test_body, self.tear_down)
 
     def set_up(self):
-        self.run('resource group create --location {} --name {}'.format(
+        self.run('resource group create --location {} {}'.format(
             self.location,
             self.resource_group))
 
     def test_body(self):
-        self.run(['vm', 'create', '--resource-group', self.resource_group,
+        self.run(['vm', 'create', self.resource_group, self.vm_name,
                   '--location', self.location,
-                  '-n', self.vm_name, '--admin-username', 'ubuntu',
+                  '--admin-username', 'ubuntu',
                   '--image', 'Canonical:UbuntuServer:14.04.4-LTS:latest',
                   '--admin-password', 'testPassword0', '--deployment-name', self.deployment_name])
         self.test(
-            'vm list-sizes --resource-group {} --name {}'.format(
+            'vm list-sizes {} {}'.format(
                 self.resource_group,
                 self.vm_name),
             JMESPathComparator('type(@)', 'array'))
 
     def tear_down(self):
-        self.run('resource group delete --name {}'.format(self.resource_group))
+        self.run('resource group delete {}'.format(self.resource_group))
 
 class VMGeneralizeScenarioTest(CommandTestScript):
 
@@ -250,26 +249,26 @@ class VMGeneralizeScenarioTest(CommandTestScript):
         super(VMGeneralizeScenarioTest, self).__init__(self.set_up, self.test_body, self.tear_down)
 
     def set_up(self):
-        self.run('resource group create --location {} --name {}'.format(
+        self.run('resource group create --location {} {}'.format(
             self.location,
             self.resource_group))
 
     def test_body(self):
-        self.run(['vm', 'create', '--resource-group', self.resource_group,
+        self.run(['vm', 'create', self.resource_group, self.vm_name,
                   '--location', self.location,
-                  '--name', self.vm_name, '--admin-username', 'ubuntu',
+                  '--admin-username', 'ubuntu',
                   '--image', 'Canonical:UbuntuServer:14.04.4-LTS:latest',
                   '--admin-password', 'testPassword0', '--deployment-name', self.deployment_name])
-        self.run('vm power-off --resource-group {} --name {}'.format(
+        self.run('vm power-off {} {}'.format(
             self.resource_group, self.vm_name))
         # Should be able to generalize the VM after it has been stopped
         self.test(
-            'vm generalize --resource-group {} --name {}'.format(
+            'vm generalize {} {}'.format(
                 self.resource_group,
                 self.vm_name), None)
 
     def tear_down(self):
-        self.run('resource group delete --name {}'.format(self.resource_group))
+        self.run('resource group delete {}'.format(self.resource_group))
 
 class VMCreateAndStateModificationsScenarioTest(CommandTestScript):
 
@@ -284,13 +283,13 @@ class VMCreateAndStateModificationsScenarioTest(CommandTestScript):
             self.tear_down)
 
     def set_up(self):
-        self.run('resource group create --location {} --name {}'.format(
+        self.run('resource group create --location {} {}'.format(
             self.location,
             self.resource_group))
 
     def _check_vm_power_state(self, expected_power_state):
         self.test(
-            'vm show --resource-group {} --name {} --expand instanceView'.format(
+            'vm show {} {} --expand instanceView'.format(
                 self.resource_group,
                 self.vm_name),
             [
@@ -307,9 +306,9 @@ class VMCreateAndStateModificationsScenarioTest(CommandTestScript):
     def test_body(self):
         # Expecting no results
         self.test('vm list --resource-group {}'.format(self.resource_group), None)
-        self.run(['vm', 'create', '--resource-group', self.resource_group,
+        self.run(['vm', 'create', self.resource_group, self.vm_name,
                   '--location', self.location,
-                  '--name', self.vm_name, '--admin-username', 'ubuntu',
+                  '--admin-username', 'ubuntu',
                   '--image', 'Canonical:UbuntuServer:14.04.4-LTS:latest',
                   '--admin-password', 'testPassword0', '--deployment-name', self.deployment_name])
         # Expecting one result, the one we created
@@ -321,25 +320,25 @@ class VMCreateAndStateModificationsScenarioTest(CommandTestScript):
             JMESPathComparator('[0].provisioningState', 'Succeeded'),
         ])
         self._check_vm_power_state('PowerState/running')
-        self.run('vm power-off --resource-group {} --name {}'.format(
+        self.run('vm power-off {} {}'.format(
             self.resource_group, self.vm_name))
         self._check_vm_power_state('PowerState/stopped')
-        self.run('vm start --resource-group {} --name {}'.format(
+        self.run('vm start {} {}'.format(
             self.resource_group, self.vm_name))
         self._check_vm_power_state('PowerState/running')
-        self.run('vm restart --resource-group {} --name {}'.format(
+        self.run('vm restart {} {}'.format(
             self.resource_group, self.vm_name))
         self._check_vm_power_state('PowerState/running')
-        self.run('vm deallocate --resource-group {} --name {}'.format(
+        self.run('vm deallocate {} {}'.format(
             self.resource_group, self.vm_name))
         self._check_vm_power_state('PowerState/deallocated')
-        self.run('vm delete --resource-group {} --name {}'.format(
+        self.run('vm delete {} {}'.format(
             self.resource_group, self.vm_name))
         # Expecting no results
         self.test('vm list --resource-group {}'.format(self.resource_group), None)
 
     def tear_down(self):
-        self.run('resource group delete --name {}'.format(self.resource_group))
+        self.run('resource group delete {}'.format(self.resource_group))
 
 ENV_VAR = {}
 

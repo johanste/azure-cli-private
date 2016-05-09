@@ -80,6 +80,10 @@ class Application(object):
         # This does not feel quite right.
         params = dict([(key, value)
                        for key, value in args.__dict__.items() if not key.startswith('_')])
+        for key, value in params.items():
+            if callable(value) and getattr(value, 'computed', False):
+                value(params)
+
         params.pop('subcommand', None)
         params.pop('func', None)
 

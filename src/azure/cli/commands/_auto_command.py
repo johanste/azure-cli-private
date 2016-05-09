@@ -5,16 +5,17 @@ from msrest.paging import Paged
 from msrest.exceptions import ClientException
 from azure.cli.parser import IncorrectUsageError
 from azure.cli._util import CLIError
-from ..commands import COMMON_PARAMETERS
+from ..commands import COMMON_PARAMETERS, computed_value, split_id_params
 
 EXCLUDED_PARAMS = frozenset(['self', 'raw', 'custom_headers', 'operation_config',
                              'content_version', 'kwargs'])
 
 class CommandDefinition(object): #pylint: disable=too-few-public-methods
 
-    def __init__(self, operation, return_type, command_alias=None):
+    def __init__(self, operation, return_type, command_alias=None, id_parameters=()):
         self.operation = operation
         self.return_type = return_type
+        self.id_parameters = id_parameters
         self.opname = command_alias if command_alias else operation.__name__.replace('_', '-')
 
 def _decorate_option(command_table, func, name, **kwargs):
@@ -138,17 +139,42 @@ def build_operation(command_name,
             except AttributeError:
                 pass
 
-            parameter = {
-                'name': '--' + arg.replace('_', '-'),
-                'required': required,
-                'default': default,
-                'dest': arg,
-                'help': option_helps.get(arg),
-                'action': action
-            }
-            parameter.update(COMMON_PARAMETERS.get(arg, {}))
-            if param_aliases:
-                parameter.update(param_aliases.get(arg, {}))
+            if arg in op.id_parameters:
+                is_first = arg == op.id_parameters[0]
+                is_last = arg == op.id_parameters[-1]
+                
+                if len(op.id_parameters) == 1:
+                    # If there is only a single positional parameter,
+                    # it implies that there is no id/resourcegroupname 
+                    # combination that we need to take care of...
+                    metavar = arg.upper()
+                elif is_first:
+                    # More than one parameter, and this is the first. 
+                    metavar = '(RESOURCEID | ' + ' '.join(op.id_parameters).upper() + ')'
+                else:
+                    # More than one parameter, and this will be hidden...
+                   metavar =  ''
+
+                parameter = {
+                    'name': arg,
+                    'nargs': None if required and is_first else '?',
+                    'metavar': metavar,
+                    'default': default if not is_last else computed_value(split_id_params(op.id_parameters)),
+                    'help': option_helps.get(arg),
+                    'action': action
+                }
+            else:
+                parameter = {
+                    'name': '--' + arg.replace('_', '-'),
+                    'required': required,
+                    'default': default,
+                    'dest': arg,
+                    'help': option_helps.get(arg),
+                    'action': action
+                }
+                parameter.update(COMMON_PARAMETERS.get(arg, {}))
+                if param_aliases:
+                    parameter.update(param_aliases.get(arg, {}))
 
             options.append(parameter)
 

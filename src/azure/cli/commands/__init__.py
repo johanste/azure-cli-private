@@ -20,6 +20,31 @@ INSTALLED_COMMAND_MODULES = [dist.key.replace('azure-cli-', '')
 
 logger.info('Installed command modules %s', INSTALLED_COMMAND_MODULES)
 
+RESOURCE_GROUP_ARG_NAME = 'resource_group_name'
+
+def split_id_params(targets):
+    def split_id(strid):
+        parts = strid.split('/')
+        return (parts[4],                                   # Resource group name
+                parts[8] if len(targets) > 1 else None,     # Resource name
+                parts[10] if len(targets) > 2 else None)    # Child resource name
+
+    def compute_value(namespace):
+        try:
+            # Replace the computed value function with None
+            namespace[targets[-1]] = None
+            values = split_id(namespace[targets[0]])
+            for target, value in zip(targets, values):
+                namespace[target] = value
+        except IndexError:
+            pass
+
+    return compute_value
+
+def computed_value(func):
+    setattr(func, 'computed', True)
+    return func
+
 COMMON_PARAMETERS = {
     'deployment_name': {
         'name': '--deployment-name',

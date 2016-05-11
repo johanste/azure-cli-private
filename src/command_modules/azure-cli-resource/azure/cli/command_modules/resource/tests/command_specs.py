@@ -8,24 +8,24 @@ class ResourceGroupScenarioTest(CommandTestScript):
 
     def set_up(self):
         self.resource_group = 'travistestrg'
-        if self.run('resource group exists -n {}'.format(self.resource_group)):
-            self.run('resource group delete -n {}'.format(self.resource_group))
+        if self.run('resource group exists {}'.format(self.resource_group)):
+            self.run('resource group delete {}'.format(self.resource_group))
 
     def test_body(self):
         s = self
         rg = self.resource_group
-        s.test('resource group create -n {} -l westus --tag a=b;c'.format(rg),
+        s.test('resource group create {} -l westus --tag a=b;c'.format(rg),
             {'name':'{}'.format(rg), 'tags': {'a':'b', 'c':''}})
-        s.test('resource group exists -n {}'.format(rg), True)
-        s.test('resource group show -n {}'.format(rg),
+        s.test('resource group exists {}'.format(rg), True)
+        s.test('resource group show {}'.format(rg),
             {'name': rg, 'tags': {'a':'b', 'c':''}})
         s.test('resource group list --tag a=b', {'name': rg, 'tags': {'a':'b', 'c':''}})
-        s.run('resource group delete -n {}'.format(rg))
-        s.test('resource group exists -n {}'.format(rg), None)
+        s.run('resource group delete {}'.format(rg))
+        s.test('resource group exists {}'.format(rg), None)
 
     def tear_down(self):
-        if self.run('resource group exists -n {}'.format(self.resource_group)):
-            self.run('resource group delete -n {}'.format(self.resource_group))
+        if self.run('resource group exists {}'.format(self.resource_group)):
+            self.run('resource group delete {}'.format(self.resource_group))
 
     def __init__(self):
         super(ResourceGroupScenarioTest, self).__init__(self.set_up, self.test_body, self.tear_down)
@@ -64,8 +64,8 @@ class ResourceScenarioTest(CommandTestScript):
             json.loads(s.run('resource list --tag displayName=StorageAccount -o json'))
         assert len(all_tagged_displayname) > len(storage_acc_tagged_displayname)
 
-        s.test('resource show -n xplatvmExt1314 --resource-group XPLATTESTGEXTENSION9085 ' + \
-               '--resource-type Microsoft.Compute/virtualMachines',
+        s.test('resource show XPLATTESTGEXTENSION9085 xplatvmExt1314' + \
+               ' --resource-type Microsoft.Compute/virtualMachines',
                {'name': 'xplatvmExt1314', 'location': 'southeastasia'}
         )
 

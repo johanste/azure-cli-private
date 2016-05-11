@@ -24,7 +24,7 @@ RESOURCE_GROUP_ARG_NAME = 'resource_group_name'
 
 def split_id_params(targets):
     def split_id(strid):
-        parts = strid.split('/')
+        parts = (strid or '').split('/')
         return (parts[4],                                   # Resource group name
                 parts[8] if len(targets) > 1 else None,     # Resource name
                 parts[10] if len(targets) > 2 else None)    # Child resource name

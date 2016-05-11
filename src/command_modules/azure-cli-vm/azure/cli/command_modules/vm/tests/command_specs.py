@@ -31,7 +31,7 @@ class VMListFoldedScenarioTest(CommandTestScript):
 
     def test_body(self):
         all_vms = json.loads(self.run('vm list -o json'))
-        some_vms = json.loads(self.run('vm list -g travistestresourcegroup -o json'))
+        some_vms = json.loads(self.run('vm list travistestresourcegroup -o json'))
         assert len(all_vms) > len(some_vms)
 
 class VMListIPAddressesScenarioTest(CommandTestScript):
@@ -305,14 +305,14 @@ class VMCreateAndStateModificationsScenarioTest(CommandTestScript):
 
     def test_body(self):
         # Expecting no results
-        self.test('vm list --resource-group {}'.format(self.resource_group), None)
+        self.test('vm list {}'.format(self.resource_group), None)
         self.run(['vm', 'create', self.resource_group, self.vm_name,
                   '--location', self.location,
                   '--admin-username', 'ubuntu',
                   '--image', 'Canonical:UbuntuServer:14.04.4-LTS:latest',
                   '--admin-password', 'testPassword0', '--deployment-name', self.deployment_name])
         # Expecting one result, the one we created
-        self.test('vm list --resource-group {}'.format(self.resource_group), [
+        self.test('vm list {}'.format(self.resource_group), [
             JMESPathComparator('length(@)', 1),
             JMESPathComparator('[0].resourceGroup', self.resource_group),
             JMESPathComparator('[0].name', self.vm_name),
@@ -335,7 +335,7 @@ class VMCreateAndStateModificationsScenarioTest(CommandTestScript):
         self.run('vm delete {} {}'.format(
             self.resource_group, self.vm_name))
         # Expecting no results
-        self.test('vm list --resource-group {}'.format(self.resource_group), None)
+        self.test('vm list {}'.format(self.resource_group), None)
 
     def tear_down(self):
         self.run('resource group delete {}'.format(self.resource_group))
@@ -349,7 +349,7 @@ TEST_DEF = [
     },
     {
         'test_name': 'vm_list_from_group',
-        'command': 'vm list --resource-group XPLATTESTGEXTENSION9085'
+        'command': 'vm list XPLATTESTGEXTENSION9085'
     },
     {
         'test_name': 'vm_list_ip_addresses',

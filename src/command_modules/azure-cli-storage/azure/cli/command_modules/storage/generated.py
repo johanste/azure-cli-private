@@ -23,8 +23,8 @@ build_operation(
     [
         CommandDefinition(StorageAccountsOperations.check_name_availability,
                           'Result', 'check-name'),
-        CommandDefinition(StorageAccountsOperations.delete, None),
-        CommandDefinition(StorageAccountsOperations.get_properties, 'StorageAccount', 'show')
+        CommandDefinition(StorageAccountsOperations.delete, None, id_parameters=('resource_group_name', 'account_name')),
+        CommandDefinition(StorageAccountsOperations.get_properties, 'StorageAccount', 'show', id_parameters=('resource_group_name', 'account_name'))
     ], command_table, PARAMETER_ALIASES)
 
 build_operation(
@@ -37,11 +37,11 @@ build_operation(
 build_operation(
     'storage account', None, ConvenienceStorageAccountCommands,
     [
-        CommandDefinition(ConvenienceStorageAccountCommands.create, 'Result'),
-        CommandDefinition(ConvenienceStorageAccountCommands.list, '[StorageAccount]'),
+        CommandDefinition(ConvenienceStorageAccountCommands.create, 'Result', id_parameters=('resource_group_name', 'account_name')),
+        CommandDefinition(ConvenienceStorageAccountCommands.list, '[StorageAccount]', id_parameters=['resource_group_name']),
         CommandDefinition(ConvenienceStorageAccountCommands.show_usage, 'Object'),
-        CommandDefinition(ConvenienceStorageAccountCommands.set, 'Object'),
-        CommandDefinition(ConvenienceStorageAccountCommands.connection_string, 'Object')
+        CommandDefinition(ConvenienceStorageAccountCommands.set, 'Object', id_parameters=('resource_group_name', 'account_name')),
+        CommandDefinition(ConvenienceStorageAccountCommands.connection_string, 'Object', id_parameters=('resource_group_name', 'account_name'))
     ], command_table, patch_aliases(PARAMETER_ALIASES, {
         'account_type': {'name': '--type'}
     }))
@@ -49,13 +49,13 @@ build_operation(
 build_operation(
     'storage account keys', 'storage_accounts', storage_client_factory,
     [
-        CommandDefinition(StorageAccountsOperations.list_keys, '[StorageAccountKeys]', 'list')
+        CommandDefinition(StorageAccountsOperations.list_keys, '[StorageAccountKeys]', 'list', id_parameters=('resource_group_name', 'account_name'))
     ], command_table, PARAMETER_ALIASES)
 
 build_operation(
     'storage account keys', None, ConvenienceStorageAccountCommands,
     [
-        CommandDefinition(ConvenienceStorageAccountCommands.renew_keys, 'Object', 'renew')
+        CommandDefinition(ConvenienceStorageAccountCommands.renew_keys, 'Object', 'renew', id_parameters=('resource_group_name', 'account_name'))
     ], command_table, PARAMETER_ALIASES)
 
 # BLOB SERVICE COMMANDS

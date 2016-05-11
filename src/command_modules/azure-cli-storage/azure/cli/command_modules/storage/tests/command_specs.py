@@ -21,7 +21,7 @@ ENV_VAR = {
 }
 
 def _get_connection_string(runner):
-    out = runner.run('storage account connection-string -g {} -n {}'
+    out = runner.run('storage account connection-string {} {}'
         .format(RESOURCE_GROUP_NAME, STORAGE_ACCOUNT_NAME))
     connection_string = out.replace('Connection String : ', '')
     runner.set_env('AZURE_STORAGE_CONNECTION_STRING', connection_string)
@@ -29,7 +29,7 @@ def _get_connection_string(runner):
 class StorageAccountCreateAndDeleteTest(CommandTestScript):
     def set_up(self):
         self.account = 'testcreatedelete'
-        self.run('storage account delete -g {} -n {}'.format(RESOURCE_GROUP_NAME, self.account))
+        self.run('storage account delete {} {}'.format(RESOURCE_GROUP_NAME, self.account))
         result = json.loads(self.run('storage account check-name --name {} -o json'.format(self.account)))
         if not result['nameAvailable']:
             raise CLIError('Failed to delete pre-existing storage account {}. Unable to continue test.'.format(self.account))
@@ -38,14 +38,14 @@ class StorageAccountCreateAndDeleteTest(CommandTestScript):
         account = self.account
         rg = RESOURCE_GROUP_NAME
         s = self
-        s.run('storage account create --type Standard_LRS -l westus -n {} -g {}'.format(account, rg))
+        s.run('storage account create --type Standard_LRS -l westus {} {}'.format(rg, account))
         s.test('storage account check-name --name {}'.format(account),
                {'nameAvailable': False, 'reason': 'AlreadyExists'})
-        s.run('storage account delete -g {} -n {}'.format(RESOURCE_GROUP_NAME, account))
+        s.run('storage account delete {} {}'.format(RESOURCE_GROUP_NAME, account))
         s.test('storage account check-name --name {}'.format(account), {'nameAvailable': True})
 
     def tear_down(self):
-        self.run('storage account delete -g {} -n {}'.format(RESOURCE_GROUP_NAME, self.account))
+        self.run('storage account delete {} {}'.format(RESOURCE_GROUP_NAME, self.account))
 
     def __init__(self):
         super(StorageAccountCreateAndDeleteTest, self).__init__(
@@ -60,34 +60,34 @@ class StorageAccountScenarioTest(CommandTestScript):
         s.test('storage account check-name --name teststorageomega', {'nameAvailable': True})
         s.test('storage account check-name --name {}'.format(account),
                {'nameAvailable': False, 'reason': 'AlreadyExists'})
-        s.test('storage account list -g {}'.format(rg),
+        s.test('storage account list {}'.format(rg),
                {'name': account, 'accountType': 'Standard_LRS', 'location': 'westus', 'resourceGroup': rg})
-        s.test('storage account show --resource-group {} --account-name {}'.format(rg, account),
+        s.test('storage account show {} {}'.format(rg, account),
                {'name': account, 'accountType': 'Standard_LRS', 'location': 'westus', 'resourceGroup': rg})
         s.test('storage account show-usage', {'name': {'value': 'StorageAccounts'}})
-        cs = s.run('storage account connection-string -g {} --account-name {} --use-http'.format(rg, account))
+        cs = s.run('storage account connection-string {} {} --use-http'.format(rg, account))
         assert 'https' not in cs
         assert account in cs
-        keys = json.loads(s.run('storage account keys list -g {} --account-name {} -o json'.format(rg, account)))
+        keys = json.loads(s.run('storage account keys list {} {} -o json'.format(rg, account)))
         key1 = keys['key1']
         key2 = keys['key2']
         assert key1 and key2
-        keys = json.loads(s.run('storage account keys renew -g {} --account-name {} -o json'.format(rg, account)))
+        keys = json.loads(s.run('storage account keys renew {} {} -o json'.format(rg, account)))
         assert key1 != keys['key1']
         key1 = keys['key1']
         assert key2 != keys['key2']
         key2 = keys['key2']
-        keys = json.loads(s.run('storage account keys renew -g {} --account-name {} --key key2 -o json'.format(rg, account)))
+        keys = json.loads(s.run('storage account keys renew {} {} --key key2 -o json'.format(rg, account)))
         assert key1 == keys['key1']
         assert key2 != keys['key2']
-        s.test('storage account set -g {} -n {} --tags foo=bar;cat'.format(rg, account),
+        s.test('storage account set {} {} --tags foo=bar;cat'.format(rg, account),
                {'tags': {'cat':'', 'foo':'bar'}})
         # TODO: This should work like other tag commands--no value to clear
-        s.test('storage account set -g {} -n {} --tags none='.format(rg, account),
+        s.test('storage account set {} {} --tags none='.format(rg, account),
                {'tags': {'none': ''}})
-        s.test('storage account set -g {} -n {} --type Standard_GRS'.format(rg, account),
+        s.test('storage account set {} {} --type Standard_GRS'.format(rg, account),
                {'accountType': 'Standard_GRS'})
-        s.run('storage account set -g {} -n {} --type Standard_LRS'.format(rg, account))
+        s.run('storage account set {} {} --type Standard_LRS'.format(rg, account))
 
     def __init__(self):
         super(StorageAccountScenarioTest, self).__init__(

@@ -20,9 +20,9 @@ build_operation(
             ResourceGroupsOperations.delete,
             LongRunningOperation(L('Deleting resource group'), L('Resource group deleted')),
             id_parameters=['resource_group_name']),
-        AutoCommandDefinition(ResourceGroupsOperations.get, 'ResourceGroup', 'show',
+        CommandDefinition(ResourceGroupsOperations.get, 'ResourceGroup', 'show',
                               id_parameters=['resource_group_name']),
-        AutoCommandDefinition(ResourceGroupsOperations.check_existence, 'Bool', 'exists',
+        CommandDefinition(ResourceGroupsOperations.check_existence, 'Bool', 'exists',
                               id_parameters=['resource_group_name']),
     ],
     command_table, PARAMETER_ALIASES)
@@ -30,8 +30,8 @@ build_operation(
 build_operation(
     'resource group', None, ConvenienceResourceGroupCommands,
     [
-        AutoCommandDefinition(ConvenienceResourceGroupCommands.list, '[ResourceGroup]'),
-        AutoCommandDefinition(ConvenienceResourceGroupCommands.create, 'ResourceGroup',
+        CommandDefinition(ConvenienceResourceGroupCommands.list, '[ResourceGroup]'),
+        CommandDefinition(ConvenienceResourceGroupCommands.create, 'ResourceGroup',
                               id_parameters=['resource_group_name']),
     ],
     command_table, PARAMETER_ALIASES)
@@ -39,8 +39,8 @@ build_operation(
 build_operation(
     'resource', None, ConvenienceResourceCommands,
     [
-        AutoCommandDefinition(ConvenienceResourceCommands.list, '[Resource]'),
-        AutoCommandDefinition(ConvenienceResourceCommands.show, 'Resource', 
+        CommandDefinition(ConvenienceResourceCommands.list, '[Resource]'),
+        CommandDefinition(ConvenienceResourceCommands.show, 'Resource', 
                               id_parameters=('resource_group_name', 'resource_name')),
     ],
     command_table, PARAMETER_ALIASES)

@@ -272,10 +272,11 @@ build_operation("network vnet",
 
 build_operation('network vnet',
                 'vnet',
-                lambda _: get_mgmt_service_client(VNetClient, VNetClientConfig),
+                lambda **_: get_mgmt_service_client(VNetClient, VNetClientConfig),
                 [
                     CommandDefinition(VNetOperations.create,
-                                          LongRunningOperation(L('Creating virtual network'), L('Virtual network created')))
+                                      LongRunningOperation(L('Creating virtual network'), L('Virtual network created')),
+                                      id_parameters=('resource_group_name', 'deployment_parameter_virtual_network_name_value'))
                 ],
                 command_table,
-                VNET_SPECIFIC_PARAMS)
+                VNET_ALIASES)

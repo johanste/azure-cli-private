@@ -62,24 +62,20 @@ build_operation(
 build_operation(
     'resource group deployment', 'deployments', _resource_client_factory,
     [
-        CommandDefinition(DeploymentsOperations.list, '[Deployment]'),
-        CommandDefinition(DeploymentsOperations.get, 'Deployment', 'show'),
+        CommandDefinition(DeploymentsOperations.list, '[Deployment]', id_parameters=['resource_group_name']),
+        CommandDefinition(DeploymentsOperations.get, 'Deployment', 'show', id_parameters=('resource_group_name', 'deployment_name')),
         #CommandDefinition(DeploymentsOperations.validate, 'Object'),
         #CommandDefinition(DeploymentsOperations.delete, 'Object'),
-        CommandDefinition(DeploymentsOperations.check_existence, 'Bool', 'exists'),
+        CommandDefinition(DeploymentsOperations.check_existence, 'Bool', 'exists', id_parameters=('resource_group_name', 'deployment_name')),
         #CommandDefinition(DeploymentsOperations.cancel, 'Object'),
         #CommandDefinition(DeploymentsOperations.create_or_update, 'Object', 'create'),
     ],
-    command_table, patch_aliases(PARAMETER_ALIASES, {
-        'deployment_name': {'name': '--name -n', 'required': True}
-    }))
+    command_table)
 
 build_operation(
     'resource group deployment operation', 'deployment_operations', _resource_client_factory,
     [
-        CommandDefinition(DeploymentOperationsOperations.list, '[DeploymentOperations]'),
-        CommandDefinition(DeploymentOperationsOperations.get, 'DeploymentOperations', 'show')
+        CommandDefinition(DeploymentOperationsOperations.list, '[DeploymentOperations]', id_parameters=('resource_group_name', 'deployment_name')),
+        CommandDefinition(DeploymentOperationsOperations.get, 'DeploymentOperations', 'show', id_parameters=('resource_group_name', 'deployment_name', 'operation_id'))
     ],
-    command_table, patch_aliases(PARAMETER_ALIASES, {
-        'deployment_name': {'name': '--name -n', 'required': True}
-    }))
+    command_table)

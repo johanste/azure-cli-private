@@ -205,7 +205,7 @@ build_operation("network vnet subnet",
                 [
                     CommandDefinition(SubnetsOperations.delete, LongRunningOperation(L('Deleting subnet'), L('Subnet deleted')), id_parameters=('resource_group_name', 'virtual_network_name', 'subnet_name')),
                     CommandDefinition(SubnetsOperations.get, 'Subnet', command_alias='show', id_parameters=('resource_group_name', 'virtual_network_name', 'subnet_name')),
-                    CommandDefinition(SubnetsOperations.list, '[Subnet]'),
+                    CommandDefinition(SubnetsOperations.list, '[Subnet]', id_parameters=('resource_group_name', 'virtual_network_name')),
                 ],
                 command_table)
 

@@ -13,9 +13,12 @@ from azure.cli.command_modules.vm._actions import (VMImageFieldAction,
                                                    load_images_from_aliases_doc,
                                                    get_vm_sizes)
 from azure.cli.commands.parameters import (location_type,
+                                           resource_group_name_type,
+                                           name_type,
                                            get_location_completion_list,
                                            get_one_of_subscription_locations,
-                                           get_resource_name_completion_list)
+                                           get_resource_name_completion_list,
+                                           splitter)
 from azure.cli.commands import register_cli_argument, CliArgumentType, register_extra_cli_argument
 
 def get_urn_aliases_completion_list(prefix, **kwargs):#pylint: disable=unused-argument
@@ -28,18 +31,19 @@ def get_vm_size_completion_list(prefix, action, parsed_args, **kwargs):#pylint: 
     return [r.name for r in result]
 
 # BASIC PARAMETER CONFIGURATION
-name_arg_type = CliArgumentType(options_list=('--name', '-n'), metavar='NAME')
+
 multi_ids_type = CliArgumentType(
     nargs='+'
 )
 
 admin_username_type = CliArgumentType(options_list=('--admin-username',), default=getpass.getuser(), required=False)
-existing_vm_name = CliArgumentType(overrides=name_arg_type, help='The name of the virtual machine', completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines'))
+existing_vm_name = CliArgumentType(overrides=name_type, help='ID or name of the virtual machine', completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines'), validator=splitter('vm_name', 'resource_group_name'))
+register_cli_argument('vm', 'resource_group_name', arg_type=resource_group_name_type, required=False, help=argparse.SUPPRESS)
 register_cli_argument('vm', 'vm_name', existing_vm_name)
 register_cli_argument('vm', 'size', CliArgumentType(completer=get_vm_size_completion_list))
 
-register_cli_argument('vm scaleset', 'vm_scale_set_name', name_arg_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachineScaleSets'))
-register_cli_argument('vm scaleset', 'virtual_machine_scale_set_name', name_arg_type)
+register_cli_argument('vm scaleset', 'vm_scale_set_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachineScaleSets'))
+register_cli_argument('vm scaleset', 'virtual_machine_scale_set_name', name_type)
 register_cli_argument('vm scaleset', 'instance_ids', multi_ids_type)
 register_cli_argument('vm disk', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm disk', 'disk_name', CliArgumentType(options_list=('--name', '-n'), help='The data disk name. If missing, will retrieve from vhd uri'))
@@ -49,7 +53,7 @@ register_cli_argument('vm disk', 'lun', CliArgumentType(
 register_cli_argument('vm disk', 'vhd', CliArgumentType(type=VirtualHardDisk, help='virtual hard disk\'s uri. For example:https://mystorage.blob.core.windows.net/vhds/d1.vhd'))
 register_cli_argument('vm disk', 'caching', CliArgumentType(help='Host caching policy', default='None', choices=['None', 'ReadOnly', 'ReadWrite']))
 
-register_cli_argument('vm availability-set', 'availability_set_name', name_arg_type, completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'))
+register_cli_argument('vm availability-set', 'availability_set_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'))
 
 register_cli_argument('vm access', 'username', CliArgumentType(options_list=('--username', '-u'), help='The user name'))
 register_cli_argument('vm access', 'password', CliArgumentType(options_list=('--password', '-p'), help='The user password'))
@@ -73,7 +77,7 @@ register_cli_argument('vm nic', 'nic_names', multi_ids_type)
 register_cli_argument('vm diagnostics', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm diagnostics set', 'storage_account', completer=get_resource_name_completion_list('Microsoft.Storage/storageAccounts'))
 
-register_cli_argument('vm extension', 'vm_extension_name', name_arg_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines/extensions'))
+register_cli_argument('vm extension', 'vm_extension_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines/extensions'))
 register_cli_argument('vm extension', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm extension', 'auto_upgrade_minor_version', CliArgumentType(action='store_true'))
 
@@ -97,7 +101,7 @@ nsg_rule_type = CliArgumentType(
 )
 
 for scope in ['vm create', 'vm scaleset create']:
-    register_cli_argument(scope, 'name', name_arg_type)
+    register_cli_argument(scope, 'name', name_type)
     register_cli_argument(scope, 'location', CliArgumentType(completer=get_location_completion_list))
     register_cli_argument(scope, 'custom_os_disk_uri', CliArgumentType(help=argparse.SUPPRESS))
     register_cli_argument(scope, 'custom_os_disk_type', CliArgumentType(choices=['windows', 'linux']))

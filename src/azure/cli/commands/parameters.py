@@ -54,12 +54,36 @@ def get_resource_name_completion_list(resource_type=None):
             return [r.name for r in get_resources_in_subscription(resource_type=resource_type)]
     return completer
 
+def _split_id(id_string):
+    parts = id_string.split('/')[1:]
+    return parts
+
+def _is_id(parts):
+    return len(parts) > 7 and parts[0] == 'subscriptions' and parts[2] == 'resourceGroups' and parts[4] == 'providers'
+
+def splitter(resource_name_dest, rg_name_dest, child_resource_name_dest=None):
+    def func(namespace):
+        parts = _split_id(getattr(namespace, resource_name_dest, ''))
+        if _is_id(parts):
+            setattr(namespace, resource_name_dest, parts[7])
+            setattr(namespace, rg_name_dest, parts[3])
+            if child_resource_name_dest:
+                setattr(namespace, child_resource_name_dest, parts[9])
+        else:
+            # Directly access dest2 and dest3 to force an exception
+            # if they were not provided
+            if getattr(namespace, rg_name_dest) is None:
+                raise argparse.ArgumentError(None, 'Missing resource group name')
+            if child_resource_name_dest and not getattr(namespace, child_resource_name_dest):
+                raise argparse.ArgumentError(None, 'Missing child resource name')
+    return func
+
 resource_group_name_type = CliArgumentType(
     options_list=('--resource-group', '-g'),
     completer=get_resource_group_completion_list,
     help='Name of resource group')
 
-name_type = CliArgumentType(options_list=('--name', '-n'), help='the primary resource name')
+name_type = CliArgumentType(options_list=(), help='the primary resource name', metavar='(RESOURCEID | NAME -g RESOURCEGROUP)', required=CliArgumentType.REMOVE)
 
 location_type = CliArgumentType(
     options_list=('--location', '-l'),

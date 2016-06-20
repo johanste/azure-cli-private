@@ -37,8 +37,8 @@ multi_ids_type = CliArgumentType(
 )
 
 admin_username_type = CliArgumentType(options_list=('--admin-username',), default=getpass.getuser(), required=False)
-existing_vm_name = CliArgumentType(overrides=name_type, help='ID or name of the virtual machine', completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines'), validator=splitter('vm_name', 'resource_group_name'))
-existing_availbility_set_name = CliArgumentType(overrides=name_type, help='Name of availability set', completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'), validator=splitter('availability_set_name', 'resource_group_name'))
+existing_vm_name = CliArgumentType(overrides=name_type, help='ID or name of the virtual machine', completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines'), validator=splitter('vm_name'))
+existing_availbility_set_name = CliArgumentType(overrides=name_type, help='Name of availability set', completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'), validator=splitter('availability_set_name'))
 
 register_cli_argument('vm', 'resource_group_name', arg_type=resource_group_name_type, required=False, help=argparse.SUPPRESS)
 register_cli_argument('vm', 'vm_name', existing_vm_name)

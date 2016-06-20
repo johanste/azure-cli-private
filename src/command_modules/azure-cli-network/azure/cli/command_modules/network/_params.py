@@ -8,23 +8,23 @@ from azure.cli.commands import register_cli_argument, CliArgumentType
 # BASIC PARAMETER CONFIGURATION
 
 # Resource name/id parameters
-public_ip_name_type = CliArgumentType(overrides=name_type, metavar='(ID | PUBLICIPNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/publicIPAddresses'), validator=splitter('resource_group_name', 'public_ip_address_name'))
-application_gateway_name_type = CliArgumentType(overrides=name_type, metavar='(ID | APPGATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/applicationGateways'), validator=splitter('resource_group_name', 'application_gateway_name'))
-express_route_circuit_name_type = CliArgumentType(overrides=name_type, metavar='(ID | CIRCUITNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/expressRouteCircuits'), validator=splitter('resource_group_name', 'circuit_name'))
-express_route_authorization_name_type = CliArgumentType(overrides=name_type, metavar='(ID | NAME -g RESOURCEGROUP --circuit-name CIRCUITNAME)', validator=splitter('resource_group_name', 'circuit_name', 'authorization_name'))
-express_route_peering_name_type = CliArgumentType(overrides=name_type, metavar='(ID | NAME -g RESOURCEGROUP --circuit-name CIRCUITNAME)', validator=splitter('resource_group_name', 'circuit_name', 'peering_name'))
+public_ip_name_type = CliArgumentType(overrides=name_type, metavar='(ID | PUBLICIPNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/publicIPAddresses'), validator=splitter('public_ip_address_name'))
+application_gateway_name_type = CliArgumentType(overrides=name_type, metavar='(ID | APPGATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/applicationGateways'), validator=splitter('application_gateway_name'))
+express_route_circuit_name_type = CliArgumentType(overrides=name_type, metavar='(ID | CIRCUITNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/expressRouteCircuits'), validator=splitter('circuit_name'))
+express_route_authorization_name_type = CliArgumentType(overrides=name_type, metavar='(ID | NAME -g RESOURCEGROUP --circuit-name CIRCUITNAME)', validator=splitter('circuit_name', 'authorization_name'))
+express_route_peering_name_type = CliArgumentType(overrides=name_type, metavar='(ID | NAME -g RESOURCEGROUP --circuit-name CIRCUITNAME)', validator=splitter('circuit_name', 'peering_name'))
 load_balancer_name_type = CliArgumentType(overrides=name_type, metavar='(ID | LBNAME -g RESOURCEGROUP)', validator=splitter('resource_group_name', 'load_balancer_name'), completer=get_resource_name_completion_list('Microsoft.Network/loadBalancers'))
-local_network_gateway_name_type = CliArgumentType(name_type, metavar='(ID | GATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/localNetworkGateways'), validator=splitter('resource_group_name', 'local_network_gateway_name'))
-network_interface_name_type = CliArgumentType(name_type, metavar='(ID | NIC -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/networkInterfaces'), validator=splitter('resource_group_name', 'network_interface_name'))
-nsg_name_type = CliArgumentType(name_type, metavar='(ID | NSGNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/networkSecurityGroups'), validator=splitter('resource_group_name', 'network_security_group_name'))
-nsg_rule_name_type = CliArgumentType(name_type, metavar='(ID | NSGRULENAME -g RESOURCEGROUP --nsg-name NSGNAME)', validator=splitter('resource_group_name', 'network_security_group_name', 'security_rule_name'))
-route_name_type = CliArgumentType(name_type, metavar='(ID | ROUTENAME -g RESOURCEGROUP --route-table-name ROUTETABLENAME)', validator=splitter('resource_group_name', 'route_table_name', 'route_name'))
-route_table_name_type = CliArgumentType(name_type, metavar='(ID | TABLENAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/routeTables'), validator=splitter('resource_group_name', 'route_table_name'))
-connection_shared_key_name_type = CliArgumentType(name_type, metavar=('ID | CONNECTIONNAME -g RESOURCEGROUP'), validator=splitter('resource_group_name', 'connection_shared_key_name'))
-subnet_name_type = CliArgumentType(name_type, metavar='(ID | SUBNETNAME -g RESOURCEGROUP --vnet-name VNETNAME)', validator=splitter('resource_group_name', 'virtual_network_name', 'subnet_name'))
-virtual_network_gateway_connection_name = CliArgumentType(name_type, metavar='(ID | VPNCONNECTIONNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworkGatewayConnections'), validator=splitter('resource_group_name', 'virtual_network_gateway_connection_name'))
-virtual_network_gateway_vpn_name_type = CliArgumentType(name_type, metavar='(ID | GATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworkGateways'), validator=splitter('resource_group_name', 'virtual_network_gateway_name'))
-virtual_network_name_type = CliArgumentType(overrides=name_type, metavar='(ID | VNETNAME -g RESOURCEGROUP)', help='Name of the virtual network.', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworks'), validator=splitter('resource_group_name', 'virtual_network_name'))
+local_network_gateway_name_type = CliArgumentType(name_type, metavar='(ID | GATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/localNetworkGateways'), validator=splitter('local_network_gateway_name'))
+network_interface_name_type = CliArgumentType(name_type, metavar='(ID | NIC -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/networkInterfaces'), validator=splitter('network_interface_name'))
+nsg_name_type = CliArgumentType(name_type, metavar='(ID | NSGNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/networkSecurityGroups'), validator=splitter('network_security_group_name'))
+nsg_rule_name_type = CliArgumentType(name_type, metavar='(ID | NSGRULENAME -g RESOURCEGROUP --nsg-name NSGNAME)', validator=splitter('network_security_group_name', 'security_rule_name'))
+route_name_type = CliArgumentType(name_type, metavar='(ID | ROUTENAME -g RESOURCEGROUP --route-table-name ROUTETABLENAME)', validator=splitter('route_table_name', 'route_name'))
+route_table_name_type = CliArgumentType(name_type, metavar='(ID | TABLENAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/routeTables'), validator=splitter('route_table_name'))
+connection_shared_key_name_type = CliArgumentType(name_type, metavar=('ID | CONNECTIONNAME -g RESOURCEGROUP'), validator=splitter('connection_shared_key_name'))
+subnet_name_type = CliArgumentType(name_type, metavar='(ID | SUBNETNAME -g RESOURCEGROUP --vnet-name VNETNAME)', validator=splitter('virtual_network_name', 'subnet_name'))
+virtual_network_gateway_connection_name = CliArgumentType(name_type, metavar='(ID | VPNCONNECTIONNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworkGatewayConnections'), validator=splitter('virtual_network_gateway_connection_name'))
+virtual_network_gateway_vpn_name_type = CliArgumentType(name_type, metavar='(ID | GATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworkGateways'), validator=splitter('virtual_network_gateway_name'))
+virtual_network_name_type = CliArgumentType(overrides=name_type, metavar='(ID | VNETNAME -g RESOURCEGROUP)', help='Name of the virtual network.', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworks'), validator=splitter('virtual_network_name'))
 
 # Resource type parameters when used to identify child resources
 parent_express_route_circuit_name_type = CliArgumentType(overrides=virtual_network_name_type, options_list=('--circuit-name',), metavar='CIRCUITNAME', validator=None)
@@ -34,6 +34,7 @@ parent_virtual_network_gateway_connection_name_type = CliArgumentType(overrides=
 parent_virtual_network_name_type = CliArgumentType(overrides=virtual_network_name_type, options_list=('--vnet-name',), metavar='VNETNAME', validator=None)
 
 # Parameter registration
+register_cli_argument('network', 'resource_group_name', resource_group_name_type, required=False)
 register_cli_argument('network', 'subnet_name', arg_type=subnet_name_type)
 register_cli_argument('network', 'virtual_network_name', virtual_network_name_type)
 register_cli_argument('network application-gateway', 'application_gateway_name', arg_type=application_gateway_name_type )

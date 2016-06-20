@@ -70,8 +70,6 @@ def splitter(resource_name_dest, rg_name_dest, child_resource_name_dest=None):
             if child_resource_name_dest:
                 setattr(namespace, child_resource_name_dest, parts[9])
         else:
-            # Directly access dest2 and dest3 to force an exception
-            # if they were not provided
             if getattr(namespace, rg_name_dest) is None:
                 raise argparse.ArgumentError(None, 'Missing resource group name')
             if child_resource_name_dest and not getattr(namespace, child_resource_name_dest):
@@ -84,6 +82,7 @@ resource_group_name_type = CliArgumentType(
     help='Name of resource group')
 
 name_type = CliArgumentType(options_list=(), help='the primary resource name', metavar='(RESOURCEID | NAME -g RESOURCEGROUP)', required=CliArgumentType.REMOVE)
+new_name_type = CliArgumentType(options_list=('--name', '-n'), metavar='NAME', required=True, validator=None)
 
 location_type = CliArgumentType(
     options_list=('--location', '-l'),

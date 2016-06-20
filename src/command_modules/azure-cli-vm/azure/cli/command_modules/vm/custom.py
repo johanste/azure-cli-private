@@ -460,7 +460,7 @@ def get_boot_log(resource_group_name, vm_name):
 def list_extensions(resource_group_name, vm_name):
     vm = _vm_get(resource_group_name, vm_name)
     extension_type = 'Microsoft.Compute/virtualMachines/extensions'
-    result = [r for r in vm.resources if r.type == extension_type]
+    result = [r for r in vm.resources if r.type == extension_type] if vm.resources else []
     return result
 
 def set_extension(

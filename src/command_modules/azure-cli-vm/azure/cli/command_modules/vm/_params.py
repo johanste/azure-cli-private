@@ -39,6 +39,8 @@ multi_ids_type = CliArgumentType(
 
 admin_username_type = CliArgumentType(options_list=('--admin-username',), default=getpass.getuser(), required=False)
 existing_vm_name = CliArgumentType(overrides=name_type, help='ID or name of the virtual machine', completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines'), validator=splitter('vm_name', 'resource_group_name'))
+existing_availbility_set_name = CliArgumentType(overrides=name_type, help='Name of availability set', completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'), validator=splitter('availability_set_name', 'resource_group_name'))
+
 register_cli_argument('vm', 'resource_group_name', arg_type=resource_group_name_type, required=False, help=argparse.SUPPRESS)
 register_cli_argument('vm', 'vm_name', existing_vm_name)
 register_cli_argument('vm', 'size', CliArgumentType(completer=get_vm_size_completion_list))
@@ -54,7 +56,9 @@ register_cli_argument('vm disk', 'lun', CliArgumentType(
 register_cli_argument('vm disk', 'vhd', CliArgumentType(type=VirtualHardDisk, help='virtual hard disk\'s uri. For example:https://mystorage.blob.core.windows.net/vhds/d1.vhd'))
 register_cli_argument('vm disk', 'caching', CliArgumentType(help='Host caching policy', default='None', choices=['None', 'ReadOnly', 'ReadWrite']))
 
-register_cli_argument('vm availability-set', 'availability_set_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'))
+register_cli_argument('vm availability-set', 'availability_set_name', arg_type=existing_availbility_set_name)
+register_cli_argument('vm availability-set create', 'resource_group_name', arg_type=resource_group_name_type, required=True)
+register_cli_argument('vm availability-set create', 'availability_set_name', arg_type=name_type)
 
 register_cli_argument('vm access', 'username', CliArgumentType(options_list=('--username', '-u'), help='The user name'))
 register_cli_argument('vm access', 'password', CliArgumentType(options_list=('--password', '-p'), help='The user password'))
@@ -69,19 +73,20 @@ register_cli_argument(
         completer=FilesCompleter()
     )
 )
+
 register_cli_argument('vm container create', 'agent_vm_size', CliArgumentType(completer=get_vm_size_completion_list))
-register_cli_argument('vm container', 'container_service_name', CliArgumentType(overrides=name_arg_type, help='The name of the container service'))
+register_cli_argument('vm container create', 'resource_group_name', arg_type=resource_group_name_type, required=True, completer=None)
+register_cli_argument('vm container', 'container_service_name', CliArgumentType(overrides=name_type, help='The name of the container service'))
 
 register_cli_argument('vm capture', 'overwrite', CliArgumentType(action='store_true'))
 register_cli_argument('vm nic', 'nic_ids', multi_ids_type)
 register_cli_argument('vm nic', 'nic_names', multi_ids_type)
-register_cli_argument('vm diagnostics', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm diagnostics set', 'storage_account', completer=get_resource_name_completion_list('Microsoft.Storage/storageAccounts'))
 
-register_cli_argument('vm extension', 'vm_extension_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines/extensions'))
-register_cli_argument('vm extension', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm extension', 'auto_upgrade_minor_version', CliArgumentType(action='store_true'))
-
+register_cli_argument('vm extension', 'vm_extension_name', options_list=('--name', '-n'))
+register_cli_argument('vm extension image', 'vm_extension_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines/extensions'))
+register_cli_argument('vm extension image', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm extension image', 'image_location', CliArgumentType(options_list=('--location', '-l')))
 register_cli_argument('vm extension image', 'publisher_name', CliArgumentType(options_list=('--publisher',)))
 register_cli_argument('vm extension image', 'type', CliArgumentType(options_list=('--name', '-n')))
@@ -107,7 +112,7 @@ register_cli_argument('vm create', 'network_interface_ids', options_list=('--net
                       validator=_handle_vm_nics)
 
 for scope in ['vm create', 'vm scaleset create']:
-    register_cli_argument(scope, 'name', name_type)
+    register_cli_argument(scope, 'name', name_type, options_list=('--name', '-n'))
     register_cli_argument(scope, 'location', CliArgumentType(completer=get_location_completion_list))
     register_cli_argument(scope, 'custom_os_disk_uri', CliArgumentType(help=argparse.SUPPRESS))
     register_cli_argument(scope, 'custom_os_disk_type', CliArgumentType(choices=['windows', 'linux']))
@@ -133,6 +138,7 @@ for scope in ['vm create', 'vm scaleset create']:
     register_cli_argument(scope, 'private_ip_address_allocation', CliArgumentType(choices=['dynamic', 'static'], help='', default='dynamic'))
     register_cli_argument(scope, 'public_ip_address_allocation', CliArgumentType(choices=['dynamic', 'static'], help='', default='dynamic'))
     register_cli_argument(scope, 'public_ip_address_type', CliArgumentType(choices=['none', 'new', 'existing'], help='', default='new'))
+    register_cli_argument(scope, 'resource_group_name', arg_type=resource_group_name_type, required=True, completer=None)
     register_cli_argument(scope, 'storage_account_type', CliArgumentType(choices=['new', 'existing'], help='', default='new'))
     register_cli_argument(scope, 'virtual_network_type', CliArgumentType(choices=['new', 'existing'], help='', default='new'))
     register_cli_argument(scope, 'network_security_group_rule', nsg_rule_type)

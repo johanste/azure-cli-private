@@ -1,6 +1,5 @@
 # pylint: disable=line-too-long
 from azure.cli.commands.parameters import (tags_type,
-                                           name_type,
                                            get_resource_name_completion_list)
 from azure.cli.commands import register_cli_argument, CliArgumentType
 from azure.cli.commands.validators import validate_key_value_pairs
@@ -18,6 +17,7 @@ from ._validators import (
 
 storage_account_key_options = {'primary': 'key1', 'secondary': 'key2'}
 
+name_type = CliArgumentType(options_list=('--name', '-n'))
 # TODO: update this once enums are supported in commands first-class (task #115175885)
 storage_account_types = {'Standard_LRS': AccountType.standard_lrs,
                          'Standard_ZRS': AccountType.standard_zrs,

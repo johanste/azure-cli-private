@@ -82,7 +82,7 @@ resource_group_name_type = CliArgumentType(
     help='Name of resource group')
 
 name_type = CliArgumentType(options_list=(), help='the primary resource name', metavar='(RESOURCEID | NAME -g RESOURCEGROUP)', required=CliArgumentType.REMOVE)
-new_name_type = CliArgumentType(options_list=('--name', '-n'), metavar='NAME', required=True, validator=None)
+new_name_type = CliArgumentType(overrides=name_type, metavar='NAME', validator=None, completer=None)
 
 location_type = CliArgumentType(
     options_list=('--location', '-l'),

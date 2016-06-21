@@ -38,11 +38,11 @@ register_cli_argument('network', 'resource_group_name', resource_group_name_type
 
 register_cli_argument('network', 'subnet_name', arg_type=subnet_name_type)
 register_cli_argument('network', 'virtual_network_name', virtual_network_name_type)
-register_cli_argument('network application-gateway', 'application_gateway_name', arg_type=application_gateway_name_type )
+register_cli_argument('network application-gateway', 'application_gateway_name', arg_type=application_gateway_name_type)
 
 register_cli_argument('network express-route circuit', 'circuit_name', arg_type=express_route_circuit_name_type)
 register_cli_argument('network express-route circuit-auth', 'circuit_name', arg_type=parent_express_route_circuit_name_type)
-register_cli_argument('network express-route circuit-auth', 'authorization_name', arg_type=express_route_authorization_name_type )
+register_cli_argument('network express-route circuit-auth', 'authorization_name', arg_type=express_route_authorization_name_type)
 register_cli_argument('network express-route circuit-peering', 'circuit_name', arg_type=parent_express_route_circuit_name_type)
 register_cli_argument('network express-route circuit-peering', 'peering_name', arg_type=express_route_peering_name_type)
 

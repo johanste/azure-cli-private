@@ -788,7 +788,7 @@ class VMDiagnosticsInstallTest(VCRTestBase):
         resource_group = 'travistestresourcegroup'
         storage_account = 'travistestresourcegr3014'
         extension_name = 'LinuxDiagnostic'
-        self.cmd('vm diagnostics set --vm-name {} --resource-group {} --storage-account {}'.format(vm_name, resource_group, storage_account))
+        self.cmd('vm diagnostics set {} --resource-group {} --storage-account {}'.format(vm_name, resource_group, storage_account))
         self.cmd('vm extension show --resource-group {} --vm-name {} {}'.format(resource_group, vm_name, extension_name), checks=[
             JMESPathCheck('type(@)', 'object'),
             JMESPathCheck('name', extension_name),

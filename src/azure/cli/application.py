@@ -87,7 +87,7 @@ class Application(object):
 
         args = self.parser.parse_args(argv)
         self.session['command'] = args.command
-        self._validate_arguments(args)
+        Application._validate_arguments(args)
         self.raise_event(self.COMMAND_PARSER_PARSED, command=args.command, args=args)
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.
@@ -137,7 +137,8 @@ class Application(object):
         self._event_handlers[name].remove(handler)
         logger.info("Removed application event handler '%s' at %s", name, handler)
 
-    def _validate_arguments(self, args, **_):
+    @staticmethod
+    def _validate_arguments(args, **_):
         try:
             for validator in getattr(args, '_validators', []):
                 validator(args)
@@ -146,7 +147,7 @@ class Application(object):
             except AttributeError:
                 pass
         except Exception as ex:
-            args._parser.print_usage()
+            args._parser.print_usage() # pylint: disable=protected-access
             raise CLIError(ex)
 
     KEYS_CAMELCASE_PATTERN = re.compile('(?!^)_([a-zA-Z])')

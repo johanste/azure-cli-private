@@ -90,12 +90,12 @@ class NetworkPublicIpScenarioTest(ResourceGroupVCRTestBase):
         count = 12
         deploy1 = 'ipdeploy{}'.format(count)
         deploy2 = 'ipnodnsdeploy{}'.format(count)
-        s.cmd('network public-ip create -g {} -n {} --dns-name {} --allocation-method static --deployment-name {}'.format(rg, s.public_ip_name, s.dns, deploy1), checks=[
+        s.cmd('network public-ip create -g {} {} --dns-name {} --allocation-method static --deployment-name {}'.format(rg, s.public_ip_name, s.dns, deploy1), checks=[
             JMESPathCheck('publicIp.value.provisioningState', 'Succeeded'),
             JMESPathCheck('publicIp.value.publicIPAllocationMethod', 'Static'),
             JMESPathCheck('publicIp.value.dnsSettings.domainNameLabel', s.dns)
         ])
-        s.cmd('network public-ip create -g {} -n {} --deployment-name {}'.format(rg, s.public_ip_no_dns_name, deploy2), checks=[
+        s.cmd('network public-ip create -g {} {} --deployment-name {}'.format(rg, s.public_ip_no_dns_name, deploy2), checks=[
             JMESPathCheck('publicIp.value.provisioningState', 'Succeeded'),
             JMESPathCheck('publicIp.value.publicIPAllocationMethod', 'Dynamic'),
             JMESPathCheck('publicIp.value.dnsSettings', None)
@@ -206,7 +206,7 @@ class NetworkLoadBalancerScenarioTest(ResourceGroupVCRTestBase):
 
     def body(self):
         # test lb create with min params (new ip)
-        self.cmd('network lb create -n {} -g {} --deployment-name deployLb1'.format(self.lb_name, self.resource_group), checks=[
+        self.cmd('network lb create {} -g {} --deployment-name deployLb1'.format(self.lb_name, self.resource_group), checks=[
             JMESPathCheck('loadBalancer.value.provisioningState', 'Succeeded'),
             JMESPathCheck('loadBalancer.value.frontendIPConfigurations[0].properties.privateIPAllocationMethod', 'Dynamic'),
             JMESPathCheck('loadBalancer.value.frontendIPConfigurations[0].resourceGroup', self.resource_group)
@@ -215,9 +215,9 @@ class NetworkLoadBalancerScenarioTest(ResourceGroupVCRTestBase):
         # test lb create with no ip
         vnet_name = 'mytestvnet'
         private_ip = '10.0.0.15'
-        vnet = self.cmd('network vnet create -n {} -g {} --deployment-name deployvnet'.format(vnet_name, self.resource_group))
+        vnet = self.cmd('network vnet create {} -g {} --deployment-name deployvnet'.format(vnet_name, self.resource_group))
         subnet_name = vnet['newVNet']['value']['subnets'][0]['name']
-        self.cmd('network lb create -n {} -g {} --deployment-name deployLb2 --public-ip-address-type none --vnet-name {} --subnet-name {} --private-ip-address-allocation static --private-ip-address {}'.format(
+        self.cmd('network lb create {} -g {} --deployment-name deployLb2 --public-ip-address-type none --vnet-name {} --subnet-name {} --private-ip-address-allocation static --private-ip-address {}'.format(
             self.lb_name, self.resource_group, vnet_name, subnet_name, private_ip), checks=[
                 JMESPathCheck('loadBalancer.value.provisioningState', 'Succeeded'),
                 JMESPathCheck('loadBalancer.value.frontendIPConfigurations[0].properties.privateIPAllocationMethod', 'Static'),
@@ -228,8 +228,8 @@ class NetworkLoadBalancerScenarioTest(ResourceGroupVCRTestBase):
 
         # test lb create with existing ip
         pub_ip_name = 'mytestpubip'
-        self.cmd('network public-ip create -n {} -g {} --deployment-name deploypublicip'.format(pub_ip_name, self.resource_group))
-        self.cmd('network lb create -n {} -g {} --deployment-name deployLb3 --public-ip-address-type existing --public-ip-address-name {}'.format(
+        self.cmd('network public-ip create {} -g {} --deployment-name deploypublicip'.format(pub_ip_name, self.resource_group))
+        self.cmd('network lb create {} -g {} --deployment-name deployLb3 --public-ip-address-type existing --public-ip-address-name {}'.format(
             self.lb_name, self.resource_group, pub_ip_name), checks=[
                 JMESPathCheck('loadBalancer.value.provisioningState', 'Succeeded'),
                 JMESPathCheck('loadBalancer.value.frontendIPConfigurations[0].properties.privateIPAllocationMethod', 'Dynamic'),
@@ -378,8 +378,8 @@ class NetworkSecurityGroupScenarioTest(ResourceGroupVCRTestBase):
         nrn = self.nsg_rule_name
         rt = self.resource_type
 
-        self.cmd('network nsg create -n {} -g {} --deployment-name deployment'.format(nsg, rg))
-        self.cmd('network nsg rule create --access allow --destination-address-prefix 1234 --direction inbound --nsg-name {} --protocol * -g {} --source-address-prefix 789 -n {} --source-port-range * --destination-port-range 4444'.format(nsg, rg, nrn))
+        self.cmd('network nsg create {} -g {} --deployment-name deployment'.format(nsg, rg))
+        self.cmd('network nsg rule create --access allow --destination-address-prefix 1234 --direction inbound --nsg-name {} --protocol * -g {} --source-address-prefix 789 {} --source-port-range * --destination-port-range 4444'.format(nsg, rg, nrn))
 
         self.cmd('network nsg list-all', checks=[
             JMESPathCheck('type(@)', 'array'),

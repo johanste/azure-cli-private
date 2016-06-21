@@ -84,7 +84,7 @@ register_cli_argument('vm capture', 'overwrite', CliArgumentType(action='store_t
 register_cli_argument('vm nic', 'nic_ids', multi_ids_type)
 register_cli_argument('vm nic', 'nic_names', multi_ids_type)
 register_cli_argument('vm diagnostics set', 'storage_account', completer=get_resource_name_completion_list('Microsoft.Storage/storageAccounts'))
-register_cli_argument('vm diagnostics set', 'vm_name', arg_type=parent_vm_name_arg_type)
+register_cli_argument('vm diagnostics set', 'vm_name', arg_type=existing_vm_name)
 
 register_cli_argument('vm extension', 'auto_upgrade_minor_version', CliArgumentType(action='store_true'))
 register_cli_argument('vm extension', 'vm_name', arg_type=parent_vm_name_arg_type)

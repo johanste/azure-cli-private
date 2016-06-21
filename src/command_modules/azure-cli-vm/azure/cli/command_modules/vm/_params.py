@@ -39,6 +39,8 @@ multi_ids_type = CliArgumentType(
 admin_username_type = CliArgumentType(options_list=('--admin-username',), default=getpass.getuser(), required=False)
 existing_vm_name = CliArgumentType(overrides=name_type, help='ID or name of the virtual machine', completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines'), validator=splitter('vm_name'))
 existing_availbility_set_name = CliArgumentType(overrides=name_type, help='Name of availability set', completer=get_resource_name_completion_list('Microsoft.Compute/availabilitySets'), validator=splitter('availability_set_name'))
+vm_extension_name_arg_type = CliArgumentType(overrides=name_type, validator=splitter('vm_name', 'vm_extension_name'), metavar='(ID | -g RESOURCEGROUP --vm-name VMNAME)')
+parent_vm_name_arg_type = CliArgumentType(overrides=existing_vm_name, options_list=('--vm-name',), required=False, metavar='VMNAME', validator=None)
 
 register_cli_argument('vm', 'resource_group_name', arg_type=resource_group_name_type, required=False, help=argparse.SUPPRESS)
 register_cli_argument('vm', 'vm_name', existing_vm_name)
@@ -74,16 +76,19 @@ register_cli_argument(
 )
 
 register_cli_argument('vm container create', 'agent_vm_size', CliArgumentType(completer=get_vm_size_completion_list))
-register_cli_argument('vm container create', 'resource_group_name', arg_type=resource_group_name_type, required=True, completer=None)
+register_cli_argument('vm container create', 'resource_group_name', arg_type=resource_group_name_type, required=True)
 register_cli_argument('vm container', 'container_service_name', CliArgumentType(overrides=name_type, help='The name of the container service'))
 
 register_cli_argument('vm capture', 'overwrite', CliArgumentType(action='store_true'))
 register_cli_argument('vm nic', 'nic_ids', multi_ids_type)
 register_cli_argument('vm nic', 'nic_names', multi_ids_type)
 register_cli_argument('vm diagnostics set', 'storage_account', completer=get_resource_name_completion_list('Microsoft.Storage/storageAccounts'))
+register_cli_argument('vm diagnostics set', 'vm_name', arg_type=parent_vm_name_arg_type)
 
 register_cli_argument('vm extension', 'auto_upgrade_minor_version', CliArgumentType(action='store_true'))
-register_cli_argument('vm extension', 'vm_extension_name', options_list=('--name', '-n'))
+register_cli_argument('vm extension', 'vm_name', arg_type=parent_vm_name_arg_type)
+register_cli_argument('vm', 'vm_extension_name', arg_type=vm_extension_name_arg_type)
+register_cli_argument('vm extension list', 'vm_name', arg_type=existing_vm_name)
 register_cli_argument('vm extension image', 'vm_extension_name', name_type, completer=get_resource_name_completion_list('Microsoft.Compute/virtualMachines/extensions'))
 register_cli_argument('vm extension image', 'vm_name', arg_type=existing_vm_name, options_list=('--vm-name',))
 register_cli_argument('vm extension image', 'image_location', CliArgumentType(options_list=('--location', '-l')))

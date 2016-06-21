@@ -98,7 +98,7 @@ class VMShowListSizesListIPAddressesScenarioTest(ResourceGroupVCRTestBase):
     def body(self):
         # Expecting no results at the beginning
         self.cmd('vm list-ip-addresses {} --resource-group {}'.format(self.vm_name, self.resource_group), checks=NoneCheck())
-        self.cmd('vm create --resource-group {0} --location {1} -n {2} --admin-username ubuntu '
+        self.cmd('vm create --resource-group {0} --location {1} {2} --admin-username ubuntu '
                  '--image Canonical:UbuntuServer:14.04.4-LTS:latest --admin-password testPassword0 '
                  '--deployment-name {3} --public-ip-address-allocation {4} '
                  '--public-ip-address-type new --authentication-type password'.format(
@@ -222,7 +222,7 @@ class VMGeneralizeScenarioTest(ResourceGroupVCRTestBase):
         self.vm_name = 'vm-generalize'
 
     def body(self):
-        self.cmd('vm create --resource-group {0} --location {1} --name {2} --admin-username ubuntu '
+        self.cmd('vm create --resource-group {0} --location {1} {2} --admin-username ubuntu '
                  '--image UbuntuLTS --admin-password testPassword0 --authentication-type password '
                  '--deployment-name {3}'.format(
                      self.resource_group, self.location, self.vm_name, self.deployment_name))
@@ -263,7 +263,7 @@ class VMCreateAndStateModificationsScenarioTest(ResourceGroupVCRTestBase):
     def body(self):
         # Expecting no results
         self.cmd('vm list --resource-group {}'.format(self.resource_group), checks=NoneCheck())
-        self.cmd('vm create --resource-group {0} --location {1} --name {2} --admin-username ubuntu '
+        self.cmd('vm create --resource-group {0} --location {1} {2} --admin-username ubuntu '
                  '--image Canonical:UbuntuServer:14.04.4-LTS:latest --admin-password testPassword0 '
                  '--deployment-name {3} --authentication-type password'.format(
                      self.resource_group, self.location, self.vm_name, self.deployment_name))
@@ -570,7 +570,7 @@ class VMScaleSetCreateSimple(ResourceGroupVCRTestBase):
         vmss_name = 'vrfvmss'
         # Note: all parameters that are dynamically generated client-side must be overridden here.
         # This includes deployment name, admin name and ssh key.
-        self.cmd('vm scaleset create --admin-password Test1234@! --name {vmss_name} -g {resource_group} --admin-username myadmin --deployment-name deployment'.format(resource_group=self.resource_group, vmss_name=vmss_name))
+        self.cmd('vm scaleset create --admin-password Test1234@! {vmss_name} -g {resource_group} --admin-username myadmin --deployment-name deployment'.format(resource_group=self.resource_group, vmss_name=vmss_name))
         self.cmd('vm scaleset show {vmss_name} -g {resource_group}'.format(resource_group=self.resource_group, vmss_name=vmss_name),
             checks=JMESPathCheck('virtualMachineProfile.osProfile.windowsConfiguration.enableAutomaticUpdates', True))
 
@@ -590,9 +590,9 @@ class VMScaleSetCreateOptions(ResourceGroupVCRTestBase):
         upgrade_policy = 'automatic'
         ip_name = 'vrfpubip'
 
-        self.cmd('network public-ip create --name {ip_name} -g {resource_group} --deployment-name deployment1'.format(ip_name=ip_name, resource_group=self.resource_group))
+        self.cmd('network public-ip create {ip_name} -g {resource_group} --deployment-name deployment1'.format(ip_name=ip_name, resource_group=self.resource_group))
         self.cmd('vm scaleset create --image Win2012R2Datacenter --admin-password Test1234@! -l westus'
-                 ' --name {vmss_name} -g {resource_group} --disable-overprovision --instance-count {instance_count}'
+                 ' {vmss_name} -g {resource_group} --disable-overprovision --instance-count {instance_count}'
                  ' --storage-caching {caching} --upgrade-policy-mode {upgrade_policy}'
                  ' --private-ip-address-allocation static --private-ip-address 10.0.0.5 --admin-username myadmin'
                  ' --public-ip-address-type existing --public-ip-address-name {ip_name} --deployment-name deployment2'
@@ -627,13 +627,13 @@ class VMScaleSetCreateExistingOptions(ResourceGroupVCRTestBase):
         nat_pool_name = 'vrflbnatpool'
         sku_name = 'Standard_A3'
 
-        self.cmd('network vnet create -n {vnet_name} -g {resource_group} --subnet-name {subnet_name} --deployment-name deployment'.format(vnet_name=vnet_name, resource_group=self.resource_group, subnet_name=subnet_name))
-        self.cmd('network lb create --name {lb_name} -g {resource_group} --deployment-name deployment2 --nat-pool-name {nat_pool_name} --backend-pool-name {be_pool_name}'.format(
+        self.cmd('network vnet create {vnet_name} -g {resource_group} --subnet-name {subnet_name} --deployment-name deployment'.format(vnet_name=vnet_name, resource_group=self.resource_group, subnet_name=subnet_name))
+        self.cmd('network lb create {lb_name} -g {resource_group} --deployment-name deployment2 --nat-pool-name {nat_pool_name} --backend-pool-name {be_pool_name}'.format(
             lb_name=lb_name, resource_group=self.resource_group, nat_pool_name=nat_pool_name, be_pool_name=be_pool_name))
         self.cmd('vm scaleset create --image CentOS --os-disk-name {os_disk_name}'
                  ' --virtual-network-type existing --virtual-network-name {vnet_name}'
                  ' --subnet-name {subnet_name} -l "West US" --vm-sku {sku_name}'
-                 ' --storage-container-name {container_name} -g {resource_group} --name {vmss_name}'
+                 ' --storage-container-name {container_name} -g {resource_group} {vmss_name}'
                  ' --load-balancer-type existing --load-balancer-name {lb_name}'
                  ' --ssh-key-value \'{key_value}\' --deployment-name deployment3a'
                  ' --load-balancer-backend-pool-name {be_pool_name} --load-balancer-nat-pool-name {nat_pool_name}'
@@ -695,7 +695,7 @@ class VMCreateUbuntuScenarioTest(ResourceGroupVCRTestBase): #pylint: disable=too
         self.pub_ssh_filename = pathname
 
     def body(self):
-        self.cmd('vm create --resource-group {rg} --admin-username {admin} --name {vm_name} --authentication-type {auth_type} --image {image} --ssh-key-value {ssh_key} --location {location} --deployment-name {deployment}'.format(
+        self.cmd('vm create --resource-group {rg} --admin-username {admin} {vm_name} --authentication-type {auth_type} --image {image} --ssh-key-value {ssh_key} --location {location} --deployment-name {deployment}'.format(
             rg=self.resource_group,
             admin=self.admin_username,
             vm_name=self.vm_names[0],
@@ -814,11 +814,11 @@ class VMCreateExistingOptions(ResourceGroupVCRTestBase):
         disk_name = 'vrfosdisk'
         container_name = 'vrfcontainer'
 
-        self.cmd('vm availability-set create --name {} -g {} --deployment-name deployment1'.format(availset_name, self.resource_group))
-        self.cmd('network public-ip create --name {} -g {} --deployment-name deployment2'.format(pubip_name, self.resource_group))
+        self.cmd('vm availability-set create {} -g {} --deployment-name deployment1'.format(availset_name, self.resource_group))
+        self.cmd('network public-ip create {} -g {} --deployment-name deployment2'.format(pubip_name, self.resource_group))
         self.cmd('storage account create --name {} -g {} -l westus -t Standard_LRS'.format(storage_name, self.resource_group))
-        self.cmd('network vnet create --name {} -g {} --subnet-name {} --deployment-name deployment3'.format(vnet_name, self.resource_group, subnet_name))
-        self.cmd('network nsg create --name {} -g {} --deployment-name deploymet4'.format(nsg_name, self.resource_group))
+        self.cmd('network vnet create {} -g {} --subnet-name {} --deployment-name deployment3'.format(vnet_name, self.resource_group, subnet_name))
+        self.cmd('network nsg create {} -g {} --deployment-name deploymet4'.format(nsg_name, self.resource_group))
 
         self.cmd('vm create --image UbuntuLTS --os-disk-name {disk_name} --virtual-network-type existing'
                  ' --virtual-network-name {vnet_name} --subnet-name {subnet_name} --availability-set-type existing'
@@ -827,7 +827,7 @@ class VMCreateExistingOptions(ResourceGroupVCRTestBase):
                  ' --network-security-group-name {nsg_name} --network-security-group-type existing'
                  ' --size Standard_A3 --storage-account-type existing'
                  ' --storage-account-name {storage_name} --storage-container-name {container_name} -g {resource_group}'
-                 ' --name {vm_name} --ssh-key-value \'{key_value}\''
+                 ' {vm_name} --ssh-key-value \'{key_value}\''
                  .format(vnet_name=vnet_name, subnet_name=subnet_name, availset_name=availset_name,
                          pubip_name=pubip_name, resource_group=self.resource_group, nsg_name=nsg_name,
                          vm_name=vm_name, disk_name=disk_name, container_name=container_name,
@@ -855,7 +855,7 @@ class VMCreateCustomIP(ResourceGroupVCRTestBase):
         vm_name = 'vrfvm'
         dns_name = 'vrfmyvm00110011'
 
-        self.cmd('vm create -n {vm_name} -g {resource_group} --image openSUSE --private-ip-address-allocation static'
+        self.cmd('vm create {vm_name} -g {resource_group} --image openSUSE --private-ip-address-allocation static'
                  ' --private-ip-address 10.0.0.5 --public-ip-address-allocation static --deployment-name deployment'
                  ' --dns-name-for-public-ip {dns_name} --ssh-key-value \'{key_value}\''
                  .format(vm_name=vm_name, resource_group=self.resource_group, dns_name=dns_name, key_value=TEST_SSH_KEY_PUB))
@@ -881,7 +881,7 @@ class VMDataDiskVCRTest(ResourceGroupVCRTestBase):
         self.execute()
 
     def body(self):
-        self.cmd('vm create -g {} --location {} -n {} --admin-username ubuntu '
+        self.cmd('vm create -g {} --location {} {} --admin-username ubuntu '
                  '--image UbuntuLTS --admin-password testPassword0 '
                  '--deployment-name {} --authentication-type password'.format(
                      self.resource_group, self.location, self.vm_name, self.deployment_name))
@@ -895,7 +895,7 @@ class VMDataDiskVCRTest(ResourceGroupVCRTestBase):
         disk_name = 'd1'
 
         #now attach
-        self.cmd('vm disk attach-new -g {} --vm-name {} -n {} --vhd {} --caching ReadWrite --disk-size 8 --lun 1'.format(
+        self.cmd('vm disk attach-new -g {} {} -n {} --vhd {} --caching ReadWrite --disk-size 8 --lun 1'.format(
             self.resource_group, self.vm_name, disk_name, vhd_uri))
         #check we have a data disk
         result = self.cmd('vm show -g {} {}'.format(self.resource_group, self.vm_name))
@@ -913,7 +913,7 @@ class VMDataDiskVCRTest(ResourceGroupVCRTestBase):
             }
         self.assertEqual(result['storageProfile']['dataDisks'][0], disk)
         #now detach
-        self.cmd('vm disk detach -g {} --vm-name {} -n {}'.format(
+        self.cmd('vm disk detach -g {} {} -n {}'.format(
             self.resource_group, self.vm_name, disk_name))
 
         #check we have no data disk
@@ -921,7 +921,7 @@ class VMDataDiskVCRTest(ResourceGroupVCRTestBase):
         self.assertFalse(bool(result['storageProfile']['dataDisks']))
 
         #now attach to existing
-        self.cmd('vm disk attach-existing -g {} --vm-name {} -n {} --vhd {} --caching ReadOnly'.format(
+        self.cmd('vm disk attach-existing -g {} {} -n {} --vhd {} --caching ReadOnly'.format(
             self.resource_group, self.vm_name, disk_name, vhd_uri))
 
         #check we have a data disk

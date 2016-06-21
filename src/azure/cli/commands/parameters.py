@@ -63,7 +63,7 @@ def _is_id(parts):
 
 def splitter(resource_name_dest, rg_name_dest='resource_group_name', child_resource_name_dest=None):
     def func(namespace):
-        parts = _split_id(getattr(namespace, resource_name_dest, ''))
+        parts = _split_id(getattr(namespace, child_resource_name_dest or resource_name_dest, ''))
         if _is_id(parts):
             setattr(namespace, resource_name_dest, parts[7])
             setattr(namespace, rg_name_dest, parts[3])

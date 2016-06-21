@@ -61,7 +61,7 @@ def _split_id(id_string):
 def _is_id(parts):
     return len(parts) > 7 and parts[0] == 'subscriptions' and parts[2] == 'resourceGroups' and parts[4] == 'providers'
 
-def splitter(resource_name_dest, rg_name_dest='resource_group_name', child_resource_name_dest=None):
+def splitter(resource_name_dest, child_resource_name_dest=None, rg_name_dest='resource_group_name'):
     def func(namespace):
         parts = _split_id(getattr(namespace, child_resource_name_dest or resource_name_dest, ''))
         if _is_id(parts):

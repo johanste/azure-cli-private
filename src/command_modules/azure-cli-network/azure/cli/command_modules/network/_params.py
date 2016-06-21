@@ -20,7 +20,7 @@ nsg_name_type = CliArgumentType(name_type, metavar='(ID | NSGNAME -g RESOURCEGRO
 nsg_rule_name_type = CliArgumentType(name_type, metavar='(ID | NSGRULENAME -g RESOURCEGROUP --nsg-name NSGNAME)', validator=splitter('network_security_group_name', child_resource_name_dest='security_rule_name'))
 route_name_type = CliArgumentType(name_type, metavar='(ID | ROUTENAME -g RESOURCEGROUP --route-table-name ROUTETABLENAME)', validator=splitter('route_table_name', child_resource_name_dest='route_name'))
 route_table_name_type = CliArgumentType(name_type, metavar='(ID | TABLENAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/routeTables'), validator=splitter('route_table_name'))
-connection_shared_key_name_type = CliArgumentType(name_type, metavar=('ID | CONNECTIONNAME -g RESOURCEGROUP'), validator=splitter('connection_shared_key_name'))
+connection_shared_key_name_type = CliArgumentType(name_type, metavar='(ID | CONNECTIONNAME -g RESOURCEGROUP)', validator=splitter('connection_shared_key_name'))
 subnet_name_type = CliArgumentType(name_type, metavar='(ID | SUBNETNAME -g RESOURCEGROUP --vnet-name VNETNAME)', validator=splitter('virtual_network_name', child_resource_name_dest='subnet_name'))
 virtual_network_gateway_connection_name = CliArgumentType(name_type, metavar='(ID | VPNCONNECTIONNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworkGatewayConnections'), validator=splitter('virtual_network_gateway_connection_name'))
 virtual_network_gateway_vpn_name_type = CliArgumentType(name_type, metavar='(ID | GATEWAYNAME -g RESOURCEGROUP)', completer=get_resource_name_completion_list('Microsoft.Network/virtualNetworkGateways'), validator=splitter('virtual_network_gateway_name'))
@@ -85,6 +85,7 @@ register_cli_argument('network vnet create', 'virtual_network_name', arg_type=ne
 register_cli_argument('network vnet subnet', 'virtual_network_name', arg_type=parent_virtual_network_name_type)
 register_cli_argument('network vnet subnet', 'subnet_name', arg_type=subnet_name_type)
 register_cli_argument('network vnet subnet', 'address_prefix', metavar='PREFIX', help='the address prefix in CIDR format.')
+register_cli_argument('network vnet subnet list', 'virtual_network_name', arg_type=virtual_network_name_type)
 
 register_cli_argument('network lb', 'load_balancer_name', arg_type=load_balancer_name_type)
 

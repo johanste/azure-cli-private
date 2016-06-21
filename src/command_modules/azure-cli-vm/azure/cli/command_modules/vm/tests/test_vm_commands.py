@@ -341,13 +341,13 @@ class VMExtensionsScenarioTest(VCRTestBase):
         self.execute()
 
     def body(self):
-        self.cmd('vm extension show --resource-group {} {} --name {}'.format(
+        self.cmd('vm extension show --resource-group {} --vm-name {} {}'.format(
             self.resource_group, self.vm_name, self.extension_name), checks=[
                 JMESPathCheck('type(@)', 'object'),
                 JMESPathCheck('name', self.extension_name),
                 JMESPathCheck('resourceGroup', self.resource_group)
             ])
-        self.cmd('vm extension delete --resource-group {} {} --name {}'.format(
+        self.cmd('vm extension delete --resource-group {} --vm-name {} {}'.format(
             self.resource_group, self.vm_name, self.extension_name), checks=NoneCheck())
 
 class VMMachineExtensionImageScenarioTest(VCRTestBase):
@@ -765,9 +765,9 @@ class VMExtensionInstallTest(VCRTestBase):
             json.dump(config, outfile)
 
         try:
-            self.cmd('vm extension set -n {} --publisher {} --version 1.4  {} --resource-group {} --private-config "{}"'
+            self.cmd('vm extension set {} --publisher {} --version 1.4 --vm-name {} --resource-group {} --private-config "{}"'
                 .format(extension_name, publisher, vm_name, resource_group, config_file))
-            self.cmd('vm extension show --resource-group {} {} --name {}'.format(resource_group, vm_name, extension_name), checks=[
+            self.cmd('vm extension show --resource-group {} --vm-name {} {}'.format(resource_group, vm_name, extension_name), checks=[
                 JMESPathCheck('type(@)', 'object'),
                 JMESPathCheck('name', extension_name),
                 JMESPathCheck('resourceGroup', resource_group)
@@ -788,8 +788,8 @@ class VMDiagnosticsInstallTest(VCRTestBase):
         resource_group = 'travistestresourcegroup'
         storage_account = 'travistestresourcegr3014'
         extension_name = 'LinuxDiagnostic'
-        self.cmd('vm diagnostics set {} --resource-group {} --storage-account {}'.format(vm_name, resource_group, storage_account))
-        self.cmd('vm extension show --resource-group {} {} --name {}'.format(resource_group, vm_name, extension_name), checks=[
+        self.cmd('vm diagnostics set --vm-name {} --resource-group {} --storage-account {}'.format(vm_name, resource_group, storage_account))
+        self.cmd('vm extension show --resource-group {} --vm-name {} {}'.format(resource_group, vm_name, extension_name), checks=[
             JMESPathCheck('type(@)', 'object'),
             JMESPathCheck('name', extension_name),
             JMESPathCheck('resourceGroup', resource_group)

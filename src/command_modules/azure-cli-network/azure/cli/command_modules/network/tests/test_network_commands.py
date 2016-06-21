@@ -500,7 +500,7 @@ class NetworkVNetScenarioTest(VCRTestBase):
             JMESPathCheck('resourceGroup', self.resource_group),
             JMESPathCheck('type', self.resource_type)
         ])
-        self.cmd('network vnet subnet list --resource-group {} --vnet-name {}'.format(self.resource_group, self.vnet_name),
+        self.cmd('network vnet subnet list --resource-group {} {}'.format(self.resource_group, self.vnet_name),
             checks=JMESPathCheck('type(@)', 'array'))
         self.cmd('network vnet subnet show --resource-group {} --vnet-name {} {}'.format(self.resource_group, self.vnet_name, self.vnet_subnet_name), checks=[
             JMESPathCheck('type(@)', 'object'),
@@ -508,11 +508,11 @@ class NetworkVNetScenarioTest(VCRTestBase):
             JMESPathCheck('resourceGroup', self.resource_group)
         ])
         # Expecting the subnet to be listed
-        self.cmd('network vnet subnet list --resource-group {} --vnet-name {}'.format(self.resource_group, self.vnet_name),
+        self.cmd('network vnet subnet list --resource-group {} {}'.format(self.resource_group, self.vnet_name),
             checks=JMESPathCheck("length([?name == '{}'])".format(self.vnet_subnet_name), 1))
         self.cmd('network vnet subnet delete --resource-group {} --vnet-name {} {}'.format(self.resource_group, self.vnet_name, self.vnet_subnet_name))
         # Expecting the subnet to not be listed
-        self.cmd('network vnet subnet list --resource-group {} --vnet-name {}'.format(self.resource_group, self.vnet_name),
+        self.cmd('network vnet subnet list --resource-group {} {}'.format(self.resource_group, self.vnet_name),
             checks=NoneCheck())
         # Expecting the vnet to appear in the list
         self.cmd('network vnet list --resource-group {}'.format(self.resource_group),

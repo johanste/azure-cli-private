@@ -6,6 +6,7 @@ import uuid
 import argparse
 from enum import Enum
 from .parser import AzCliCommandParser
+from azure.cli._util import CLIError
 import azure.cli.extensions
 import azure.cli._help as _help
 import azure.cli._logging as _logging
@@ -86,6 +87,7 @@ class Application(object):
 
         args = self.parser.parse_args(argv)
         self.session['command'] = args.command
+        self._validate_arguments(args)
         self.raise_event(self.COMMAND_PARSER_PARSED, command=args.command, args=args)
         # Consider - we are using any args that start with an underscore (_) as 'private'
         # arguments and remove them from the arguments that we pass to the actual function.
@@ -135,6 +137,18 @@ class Application(object):
         self._event_handlers[name].remove(handler)
         logger.info("Removed application event handler '%s' at %s", name, handler)
 
+    def _validate_arguments(self, args, **_):
+        try:
+            for validator in getattr(args, '_validators', []):
+                validator(args)
+            try:
+                delattr(args, '_validators')
+            except AttributeError:
+                pass
+        except Exception as ex:
+            args._parser.print_usage()
+            raise CLIError(ex)
+
     KEYS_CAMELCASE_PATTERN = re.compile('(?!^)_([a-zA-Z])')
     @classmethod
     def todict(cls, obj): #pylint: disable=too-many-return-statements
@@ -178,15 +192,4 @@ class Application(object):
         self.configuration.output_format = args._output_format #pylint: disable=protected-access
         del args._output_format
 
-def _validate_arguments(args, **_):
-    for validator in getattr(args, '_validators', []):
-        validator(args)
-    try:
-        delattr(args, '_validators')
-    except AttributeError:
-        pass
-
 APPLICATION = Application()
-
-# Handlers to update command definitions before they are fed to the parser
-APPLICATION.register(APPLICATION.COMMAND_PARSER_PARSED, _validate_arguments)

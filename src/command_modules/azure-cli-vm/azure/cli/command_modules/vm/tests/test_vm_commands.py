@@ -816,7 +816,7 @@ class VMCreateExistingOptions(ResourceGroupVCRTestBase):
 
         self.cmd('vm availability-set create {} -g {} --deployment-name deployment1'.format(availset_name, self.resource_group))
         self.cmd('network public-ip create {} -g {} --deployment-name deployment2'.format(pubip_name, self.resource_group))
-        self.cmd('storage account create --name {} -g {} -l westus -t Standard_LRS'.format(storage_name, self.resource_group))
+        self.cmd('storage account create {} -g {} -l westus -t Standard_LRS'.format(storage_name, self.resource_group))
         self.cmd('network vnet create {} -g {} --subnet-name {} --deployment-name deployment3'.format(vnet_name, self.resource_group, subnet_name))
         self.cmd('network nsg create {} -g {} --deployment-name deploymet4'.format(nsg_name, self.resource_group))
 

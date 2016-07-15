@@ -354,3 +354,14 @@ def update_nsg_rule(resource_group_name, network_security_group_name, security_r
 
 update_nsg_rule.__doc__ = SecurityRule.__doc__
 
+
+def get_nsg_rule(resource_group_name, network_security_group_name, security_rule_name):
+    nsgrops = _network_client_factory().security_rules
+    return nsgrops.get(resource_group_name, network_security_group_name, security_rule_name)
+
+def set_nsg_rule(**kwargs):
+    nsgrops = _network_client_factory().security_rules
+    return nsgrops.create_or_update(**kwargs)
+
+from azure.cli.commands.arm import register_generic_update
+register_generic_update('network nsg rule update', get_nsg_rule, set_nsg_rule, setter_arg_name='security_rule_parameters')

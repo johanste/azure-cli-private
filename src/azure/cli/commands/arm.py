@@ -1,5 +1,6 @@
 import argparse
 import re
+from collections import defaultdict
 from azure.cli.commands.client_factory import get_mgmt_service_client
 from azure.mgmt.resource.resources import ResourceManagementClient
 from azure.cli.application import APPLICATION
@@ -132,3 +133,85 @@ def add_id_parameters(command_table):
     APPLICATION.remove(APPLICATION.COMMAND_TABLE_LOADED, add_id_parameters)
 
 APPLICATION.register(APPLICATION.COMMAND_TABLE_LOADED, add_id_parameters)
+
+def _get_name_path(path):
+    pathlist = path.split('.')
+
+    return pathlist.pop(), pathlist
+
+def _find_property(instance, path):
+    for part in path:
+        if isinstance(instance, dict):
+            instance = instance[part]
+        else:
+            instance = getattr(instance, part)
+    return instance
+
+def set_properties(instance, expression):
+    key, value = expression.split('=', 1)
+    name, path = _get_name_path(key)
+    instance = _find_property(instance, path)
+    if isinstance(instance, dict):
+        instance[name] = value
+    else:
+        setattr(instance, name, value)
+
+def add_properties(instance, argument_values):
+    # The first argument indicates the path to the collection
+    # to add to. 
+    list_attribute_path = argument_values.pop(0).split('.')
+
+    # Find the actual list to add the new object to
+    list_to_add_to = _find_property(instance, list_attribute_path) # TODO: Create list if it doesn't exist
+
+    new_value = defaultdict(lambda: {})
+    for expression in argument_values:
+        set_properties(new_value, expression)
+    list_to_add_to.append(new_value)
+
+def remove_properties(instance, argument_values):
+    # The first argument indicates the path to the collection
+    # to add to. 
+    list_attribute_path = argument_values.pop(0).split('.')
+    list_index = argument_values.pop(0)
+
+    # Find the actual list to add the new object to
+    list_to_remove_from = _find_property(instance, list_attribute_path) # TODO: Create list if it doesn't exist
+    list_to_remove_from.pop(int(list_index))
+
+def register_generic_update(name, getter, setter, setter_arg_name='parameters'):
+    from msrestazure.azure_operation import AzureOperationPoller
+    from azure.cli.commands import CliCommand, command_table
+    from azure.cli.commands._introspection import extract_args_from_signature
+
+    get_arguments = dict(extract_args_from_signature(getter))
+    set_arguments = dict(extract_args_from_signature(setter))
+
+    def handler(args):
+        getterargs= {key: val for key, val in args.items()
+                     if key in get_arguments}
+        instance = getter(**getterargs)
+
+        # Make modifications...
+        for remove_expression in args['properties_to_remove']:
+            remove_properties(instance, remove_expression)
+
+        for set_expression in args['properties_to_set']:
+            set_properties(instance, set_expression)
+
+        for add_expression in args['properties_to_add']:
+            add_properties(instance, add_expression)
+
+        # Done... update the instance!
+        getterargs[setter_arg_name] = instance
+        opres = setter(**getterargs)
+        return opres.result() if isinstance(opres, AzureOperationPoller) else result
+
+    cmd = CliCommand(name, handler)
+    cmd.arguments.update(set_arguments)
+    cmd.arguments.update(get_arguments)
+    cmd.arguments.pop(setter_arg_name, None)
+    cmd.add_argument('properties_to_set', '--set', nargs='+', default=[])
+    cmd.add_argument('properties_to_add', '--add', nargs='+', action='append', default=[])
+    cmd.add_argument('properties_to_remove', '--remove', nargs='+', action='append', default=[])
+    command_table[name] = cmd

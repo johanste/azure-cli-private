@@ -871,3 +871,17 @@ def vmss_start(resource_group_name, vm_scale_set_name, instance_ids=None):
         return client.virtual_machine_scale_sets.start(resource_group_name,
                                                        vm_scale_set_name,
                                                        instance_ids=instance_ids)
+
+
+
+
+def get_vm(resource_group_name, vm_name):
+    vmsc = _compute_client_factory().virtual_machines
+    return vmsc.get(resource_group_name, vm_name)
+
+def set_vm(**kwargs):
+    vmsc = _compute_client_factory().virtual_machines
+    return vmsc.create_or_update(**kwargs)
+
+from azure.cli.commands.arm import register_generic_update
+register_generic_update('vm update', get_vm, set_vm)

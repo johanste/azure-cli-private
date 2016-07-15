@@ -365,3 +365,25 @@ def set_nsg_rule(**kwargs):
 
 from azure.cli.commands.arm import register_generic_update
 register_generic_update('network nsg rule update', get_nsg_rule, set_nsg_rule, setter_arg_name='security_rule_parameters')
+
+# Application Gateway Update Registration
+
+def get_app_gateway(resource_group_name, application_gateway_name):
+    return _network_client_factory().application_gateways.get(
+        resource_group_name, application_gateway_name)
+
+def set_app_gateway(**kwargs):
+    return _network_client_factory().application_gateways.create_or_update(**kwargs)
+
+register_generic_update('network application-gateway update', get_app_gateway, set_app_gateway)
+
+# Network Interface Update Registration
+
+def get_nic(resource_group_name, network_interface_name):
+    return _network_client_factory().network_interfaces.get(
+        resource_group_name, network_interface_name)
+
+def set_nic(**kwargs):
+    return _network_client_factory().network_interfaces.create_or_update(**kwargs)
+
+register_generic_update('network nic update', get_nic, set_nic)

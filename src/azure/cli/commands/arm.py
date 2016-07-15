@@ -134,27 +134,51 @@ def add_id_parameters(command_table):
 
 APPLICATION.register(APPLICATION.COMMAND_TABLE_LOADED, add_id_parameters)
 
+def _snake_case_to_camel(string):
+    return ''.join([x.capitalize() for x in string.split('_')])
+
+def _camel_case_to_snake(string):
+    s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', string)
+    return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
 def _get_name_path(path):
     pathlist = path.split('.')
-
     return pathlist.pop(), pathlist
 
-def _find_property(instance, path):
-    for part in path:
+def _clear_property(instance, name, path):
+    instance = _find_parent_property(instance, path)
+    setattr(instance, name, None)
+
+def _find_property(instance, path, default=None):
+    instance = _find_parent_property(instance, path)
+    # handle final portion of the path, which may be None
+    attr_value = getattr(instance, path[-1])
+    if not attr_value:
+        # TODO what if it is a complex object???
+        default_value = default()
+        setattr(instance, path[-1], default_value)
+    instance = attr_value or default_value
+    return instance
+
+def _find_parent_property(instance, path):
+    for part in path[:-1]:
         if isinstance(instance, dict):
             instance = instance[part]
         else:
-            instance = getattr(instance, part)
+            setattr(instance, part)
     return instance
 
 def set_properties(instance, expression):
     key, value = expression.split('=', 1)
-    name, path = _get_name_path(key)
-    instance = _find_property(instance, path)
-    if isinstance(instance, dict):
-        instance[name] = value
+    name, path = _get_name_path(_camel_case_to_snake(key))
+    if value:
+        instance = _find_property(instance, path, dict)
+        if isinstance(instance, dict):
+            instance[name] = value
+        else:
+            setattr(instance, name, value)
     else:
-        setattr(instance, name, value)
+        _clear_property(instance, name, path)
 
 def add_properties(instance, argument_values):
     # The first argument indicates the path to the collection
@@ -162,12 +186,14 @@ def add_properties(instance, argument_values):
     list_attribute_path = argument_values.pop(0).split('.')
 
     # Find the actual list to add the new object to
-    list_to_add_to = _find_property(instance, list_attribute_path) # TODO: Create list if it doesn't exist
+    # TODO: Create list if it doesn't exist
+    list_to_add_to = _find_property(instance, _camel_case_to_snake(list_attribute_path), list)
 
     new_value = defaultdict(lambda: {})
     for expression in argument_values:
         set_properties(new_value, expression)
     list_to_add_to.append(new_value)
+    setattr(instance, list_attribute_path, list_to_add_to)
 
 def remove_properties(instance, argument_values):
     # The first argument indicates the path to the collection
@@ -176,8 +202,9 @@ def remove_properties(instance, argument_values):
     list_index = argument_values.pop(0)
 
     # Find the actual list to add the new object to
-    list_to_remove_from = _find_property(instance, list_attribute_path) # TODO: Create list if it doesn't exist
-    list_to_remove_from.pop(int(list_index))
+    list_to_remove_from = _find_property(instance, _camel_case_to_snake(list_attribute_path))
+    if list_to_remove_from:
+        list_to_remove_from.pop(int(list_index))
 
 def register_generic_update(name, getter, setter, setter_arg_name='parameters'):
     from msrestazure.azure_operation import AzureOperationPoller
@@ -211,7 +238,7 @@ def register_generic_update(name, getter, setter, setter_arg_name='parameters'):
     cmd.arguments.update(set_arguments)
     cmd.arguments.update(get_arguments)
     cmd.arguments.pop(setter_arg_name, None)
-    cmd.add_argument('properties_to_set', '--set', nargs='+', default=[])
-    cmd.add_argument('properties_to_add', '--add', nargs='+', action='append', default=[])
-    cmd.add_argument('properties_to_remove', '--remove', nargs='+', action='append', default=[])
+    cmd.add_argument('properties_to_set', '--set', nargs='+', default=[], help="Space separated 'key=value' pairs of properties to set.")
+    cmd.add_argument('properties_to_add', '--add', nargs='+', action='append', default=[], help="Space separated 'key=value' pairs of properties to add.")
+    cmd.add_argument('properties_to_remove', '--remove', nargs='+', action='append', default=[], help="Single 'key=value' filter of item(s) to remove.")
     command_table[name] = cmd

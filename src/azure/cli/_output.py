@@ -54,6 +54,11 @@ def format_tsv(obj):
     obj_list = obj if isinstance(obj, list) else [obj]
     return TsvOutput.dump(obj_list)
 
+def format_stsv(obj):
+    obj_list = obj if isinstance(obj, list) else [obj]
+    
+    return SuperTsvOutput().dump(obj_list)
+
 class OutputProducer(object): #pylint: disable=too-few-public-methods
 
     format_dict = {
@@ -62,6 +67,7 @@ class OutputProducer(object): #pylint: disable=too-few-public-methods
         'text': format_text,
         'list': format_list,
         'tsv': format_tsv,
+        'stsv': format_stsv,
     }
 
     def __init__(self, formatter=format_list, file=sys.stdout): #pylint: disable=redefined-builtin
@@ -270,3 +276,56 @@ class TsvOutput(object): #pylint: disable=too-few-public-methods
         result = io.getvalue()
         io.close()
         return result
+
+class SuperTsvOutput(object):
+
+    def __init__(self):
+        self.rows = []
+
+
+    @staticmethod
+    def is_scalar(o):
+        import enum
+        return type(o) in (str, int, float, bool) or isinstance(o, enum.EnumMeta)
+
+    @staticmethod
+    def flatten(o, path='', items=None):
+        if o is None:
+            items[path] = '[None]'
+            return items
+        if SuperTsvOutput.is_scalar(o):
+            items[path] = o
+            return items
+        elif isinstance(o, list):
+            for index, v in enumerate(o):
+                SuperTsvOutput.flatten(o[index], path + "[{}]".format(index), items)
+            return items
+        else:
+            for k, v in [(path + ('.' if path else '') + k, v) for k, v in o.items()]:
+                SuperTsvOutput.flatten(v, k, items)
+            return items
+
+    def dump_row(self, row):
+        self.rows.append(SuperTsvOutput.flatten(row, items={}))
+
+    def dump(self, data):
+        for row in data:
+            self.dump_row(row)
+
+        import itertools
+        all_keys_set = set()
+        for row in self.rows:
+            all_keys_set.update(row.keys())
+
+        all_keys = sorted(all_keys_set)
+        headers = '\t'.join(all_keys)
+        output = []
+        for row in self.rows:
+            output_row = ''
+            for key in all_keys:
+                if output_row:
+                    output_row += '\t'
+                output_row += str(row.get(key, ''))
+            output_row = output_row.replace('\n', '\\n')
+            output.append(output_row)
+        return headers + '\n' + '\n'.join(output)
